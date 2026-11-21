@@ -6,7 +6,7 @@ you install only the cores you use.
 
 | Import from | Components | Install with it |
 | --- | --- | --- |
-| `@arraypress/waveform-vue/player` | `WaveformPlayer` | `@arraypress/waveform-player` ≥ 1.27.0 |
+| `@arraypress/waveform-vue/player` | `WaveformPlayer` | `@arraypress/waveform-player` |
 | `@arraypress/waveform-vue/bar` | `WaveformBar`, `WaveformBarTrigger` | `@arraypress/waveform-bar`, `@arraypress/waveform-player` |
 | `@arraypress/waveform-vue/playlist` | `WaveformPlaylist` | `@arraypress/waveform-playlist`, `@arraypress/waveform-player` |
 | `@arraypress/waveform-vue/sounds` | `WaveformSounds` | `@arraypress/waveform-sounds`, `@arraypress/waveform-player` |
@@ -15,12 +15,13 @@ There is no root import: `import … from '@arraypress/waveform-vue'` does not
 resolve. Each sub-path loads its core lazily with `import()`, and bundlers
 resolve every `import()` at build time, so a single entry for all four would
 fail to build for anyone who hasn't installed every core. The cores are
-optional peer dependencies; `vue` (^3.5) is required.
+optional peer dependencies at `^2.0.0`; `vue` 3.5+ is required. The package
+is ES modules only and needs Node 22.12+ to build with.
 
 Each sub-path exports the same components, props, emits, exposed API and
-types as the 1.x package it replaces: `@arraypress/waveform-player-vue`,
-`-bar-vue`, `-playlist-vue` and `-sounds-vue`. Switching is a change of
-import path.
+types as the package it replaces (`@arraypress/waveform-player-vue`,
+`-bar-vue`, `-playlist-vue` and `-sounds-vue`), plus the 2.0 additions in
+the [CHANGELOG](./CHANGELOG.md). Switching is a change of import path.
 
 ## Player
 
@@ -37,6 +38,22 @@ import '@arraypress/waveform-player/dist/waveform-player.css';
 <template>
   <WaveformPlayer :url="'/track.mp3'" title="My Song" artist="The Artist" />
 </template>
+```
+
+With a known length and compact peaks, a `preload: 'none'` player shows the
+total time and the waveform without fetching any audio until play:
+
+```vue
+<WaveformPlayer
+  url="/track.mp3"
+  preload="none"
+  :duration="187"
+  waveform="wp1:…"
+  show-volume
+  show-download
+  @seek="(d) => console.log(d.currentTime)"
+  @volumechange="(d) => console.log(d.volume, d.muted)"
+/>
 ```
 
 ## Bar

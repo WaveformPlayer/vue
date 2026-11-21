@@ -79,7 +79,26 @@ const trackUrl = ref('/audio/track-1.mp3');
 		<option value="/audio/track-2.mp3">Track 2</option>
 	</select>
 
-	<!-- 7 — External audio mode (paired with @arraypress/waveform-bar) -->
+	<!-- 7 — Core 2.0: a known length + compact peaks, so a `preload="none"`
+	     player shows its total and waveform with no audio request; loop,
+	     volume and download controls; the 2.0 events. -->
+	<WaveformPlayer
+		url="/audio/track.mp3"
+		preload="none"
+		:duration="187"
+		waveform="wp1:AID_"
+		show-loop
+		show-volume
+		:volume="0.8"
+		show-download
+		download-url="/audio/track-full.wav"
+		download-name="track.wav"
+		@seek="(d) => console.log('seek', d.currentTime)"
+		@volumechange="(d) => console.log('volume', d.volume, d.muted)"
+		@loop="(d) => console.log('loop', d.loop, d.start, d.end)"
+	/>
+
+	<!-- 8 — External audio mode (paired with @arraypress/waveform-bar) -->
 	<WaveformPlayer
 		url="/audio/track.mp3"
 		audio-mode="external"
