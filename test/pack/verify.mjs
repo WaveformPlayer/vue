@@ -20,7 +20,10 @@
  *      core instead of one combined entry.
  *
  * Nothing here reads the repo's `src/`; every assertion runs against
- * files that came out of the tarball.
+ * files that came out of the tarball. A core whose devDependency is a
+ * `file:` checkout (the 2.0 cores, until they are on npm) is packed from
+ * that checkout and installed as a tarball too; otherwise it comes from
+ * the registry at the peer range.
  *
  *   npm run test:pack
  *
@@ -67,10 +70,34 @@ const attempt = (cmd, args, cwd) => {
 		return [false, `${err.stdout ?? ''}${err.stderr ?? ''}`.trim()];
 	}
 };
-/** `^x.y.z || ^a.b.c` → the newest range, as an install spec. */
-const peer = (name) => `${name}@${pkg.peerDependencies[name]}`;
-
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'waveform-vue-pack-'));
+
+/** `npm pack` the package in `dir` into `tmp`; returns [tarball path, file list]. */
+function pack(dir) {
+	// npm <= 11 prints an array; npm 12 an object keyed by package name.
+	const json = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', tmp], dir));
+	const [entry] = Array.isArray(json) ? json : Object.values(json);
+	return [path.join(tmp, entry.filename), entry.files];
+}
+
+/**
+ * The install spec for a peer: a tarball packed from its `file:`
+ * devDependency checkout when there is one, else the registry at the
+ * newest range the peer admits (`^x || ^y` → `^y`).
+ */
+const peerSpecs = new Map();
+function peer(name) {
+	if (!peerSpecs.has(name)) {
+		const dev = pkg.devDependencies?.[name] ?? '';
+		peerSpecs.set(
+			name,
+			dev.startsWith('file:')
+				? pack(path.resolve(PKG_ROOT, dev.slice('file:'.length)))[0]
+				: `${name}@${pkg.peerDependencies[name].split('||').pop().trim()}`
+		);
+	}
+	return peerSpecs.get(name);
+}
 
 /** A consumer project with the tarball and the given packages installed. */
 function consumer(dir, tarball, deps) {
@@ -114,11 +141,8 @@ async function bundle(cwd, source) {
 try {
 	// ---- Pack ------------------------------------------------------------------
 	console.log('\nPacking…');
-	// npm <= 11 prints an array; npm 12 an object keyed by package name.
-	const packJson = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', tmp], PKG_ROOT));
-	const packed = Array.isArray(packJson) ? packJson : Object.values(packJson);
-	const tarball = path.join(tmp, packed[0].filename);
-	const shipped = new Set(packed[0].files.map((f) => f.path));
+	const [tarball, files] = pack(PKG_ROOT);
+	const shipped = new Set(files.map((f) => f.path));
 
 	const targets = new Set();
 	const collect = (v) => {
@@ -128,7 +152,7 @@ try {
 	collect(pkg.exports);
 	collect(pkg.typesVersions);
 
-	console.log(`\nTarball (${packed[0].filename}, ${packed[0].files.length} files)`);
+	console.log(`\nTarball (${path.basename(tarball)}, ${files.length} files)`);
 	for (const t of [...targets].sort()) check(`ships ${t}`, shipped.has(t));
 	check(
 		'ESM only: no .cjs / .d.cts shipped, no `require` export condition',
@@ -148,8 +172,7 @@ try {
 		peer('@arraypress/waveform-player'),
 		peer('@arraypress/waveform-bar'),
 		peer('@arraypress/waveform-playlist'),
-		// The newest range the peer admits.
-		`@arraypress/waveform-sounds@${pkg.peerDependencies['@arraypress/waveform-sounds'].split('||').pop().trim()}`,
+		peer('@arraypress/waveform-sounds'),
 	]);
 	for (const [name, names] of Object.entries(EXPECTED)) {
 		const spec = `${pkg.name}/${name}`;
