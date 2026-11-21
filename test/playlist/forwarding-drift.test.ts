@@ -59,7 +59,7 @@ vi.mock('@arraypress/waveform-playlist', () => {
 	return { default: Ctor, WaveformPlaylist: Ctor };
 });
 
-import { WaveformPlaylist } from '../src';
+import { WaveformPlaylist } from '../../src/playlist';
 
 beforeEach(() => {
 	ctorCalls.length = 0;

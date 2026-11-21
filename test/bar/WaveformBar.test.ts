@@ -21,8 +21,8 @@ import { flushPromises, mount } from '@vue/test-utils';
  * then talks to window.WaveformBar — so the module mock can be empty. */
 vi.mock('@arraypress/waveform-bar', () => ({ default: {}, WaveformBar: {} }));
 
-import { WaveformBar, WaveformBarTrigger } from '../src';
-import type { WaveformBarConfig } from '../src/types';
+import { WaveformBar, WaveformBarTrigger } from '../../src/bar';
+import type { WaveformBarConfig } from '../../src/bar/types';
 
 const init = vi.fn();
 const destroy = vi.fn();

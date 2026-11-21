@@ -69,7 +69,7 @@ vi.mock('@arraypress/waveform-playlist', () => ({
 	WaveformPlaylist: MockPlaylist,
 }));
 
-import { WaveformPlaylist } from '../src';
+import { WaveformPlaylist } from '../../src/playlist';
 
 const tracksA = [
 	{ url: '/a.mp3', title: 'Track A' },

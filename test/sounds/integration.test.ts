@@ -14,7 +14,7 @@
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { WaveformSounds, type WaveformSoundsExpose } from '../src';
+import { WaveformSounds, type WaveformSoundsExpose } from '../../src/sounds';
 
 /** The engine stand-in: records loads, fires the callbacks the list wires. */
 class FakePlayer {

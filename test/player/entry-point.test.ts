@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import pkg from '../package.json';
+import pkg from '../../package.json';
 
 /**
  * Pins the peer floor that the `/no-autoinit` entry point depends on.

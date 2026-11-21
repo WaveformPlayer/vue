@@ -84,7 +84,7 @@ vi.mock('@arraypress/waveform-sounds/no-autoinit', () => ({
 	WaveformSounds: MockSounds,
 }));
 
-import { WaveformSounds } from '../src';
+import { WaveformSounds } from '../../src/sounds';
 
 const sounds = [
 	{ url: '/a.mp3', title: 'Kick Loop', type: 'Drums', bpm: 120, key: 'Fmin' },

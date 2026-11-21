@@ -22,7 +22,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import coreSource from '@arraypress/waveform-bar/src/js/core.js?raw';
-import typesSource from '../src/types.ts?raw';
+import typesSource from '../../src/bar/types.ts?raw';
 
 /**
  * `DEFAULTS` keys deliberately absent from `WaveformBarConfig`.

@@ -73,7 +73,7 @@ vi.mock('@arraypress/waveform-player/no-autoinit', () => ({
 	WaveformPlayer: MockPlayer,
 }));
 
-import { WaveformPlayer } from '../src';
+import { WaveformPlayer } from '../../src/player';
 
 beforeEach(() => {
 	instances.length = 0;
@@ -168,7 +168,7 @@ describe('WaveformPlayerExpose docs vs the installed core', () => {
 	it('documents the setPlaybackRate range the core actually clamps to', async () => {
 		const { PLAYBACK_RATE_MIN, PLAYBACK_RATE_MAX } = await loadCoreThemes();
 		const src = readFileSync(
-			fileURLToPath(import.meta.url).replace(/test\/[^/]+$/, 'src/types.ts'),
+			fileURLToPath(import.meta.url).replace(/test\/player\/[^/]+$/, 'src/player/types.ts'),
 			'utf8'
 		);
 		const doc = /Set playback rate \(([\d.]+)\.\.([\d.]+)\b/.exec(src);

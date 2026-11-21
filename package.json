@@ -1,0 +1,150 @@
+{
+  "name": "@arraypress/waveform-vue",
+  "version": "2.0.0-next.0",
+  "description": "Vue 3 components for the WaveformPlayer family — one sub-path per core: player, bar, playlist and sounds. Install only the cores you use.",
+  "type": "module",
+  "exports": {
+    "./player": {
+      "import": {
+        "types": "./dist/player/index.d.ts",
+        "default": "./dist/player/index.js"
+      },
+      "require": {
+        "types": "./dist/player/index.d.cts",
+        "default": "./dist/player/index.cjs"
+      }
+    },
+    "./bar": {
+      "import": {
+        "types": "./dist/bar/index.d.ts",
+        "default": "./dist/bar/index.js"
+      },
+      "require": {
+        "types": "./dist/bar/index.d.cts",
+        "default": "./dist/bar/index.cjs"
+      }
+    },
+    "./playlist": {
+      "import": {
+        "types": "./dist/playlist/index.d.ts",
+        "default": "./dist/playlist/index.js"
+      },
+      "require": {
+        "types": "./dist/playlist/index.d.cts",
+        "default": "./dist/playlist/index.cjs"
+      }
+    },
+    "./sounds": {
+      "import": {
+        "types": "./dist/sounds/index.d.ts",
+        "default": "./dist/sounds/index.js"
+      },
+      "require": {
+        "types": "./dist/sounds/index.d.cts",
+        "default": "./dist/sounds/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "player": [
+        "./dist/player/index.d.ts"
+      ],
+      "bar": [
+        "./dist/bar/index.d.ts"
+      ],
+      "playlist": [
+        "./dist/playlist/index.d.ts"
+      ],
+      "sounds": [
+        "./dist/sounds/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "vue",
+    "vue3",
+    "vue-component",
+    "audio",
+    "player",
+    "waveform",
+    "playlist",
+    "chapters",
+    "queue",
+    "persistent-player",
+    "samples",
+    "sound-browser",
+    "visualization",
+    "web-audio",
+    "media-session",
+    "audio-player",
+    "waveform-visualization",
+    "podcast-player"
+  ],
+  "author": "ArrayPress",
+  "license": "MIT",
+  "homepage": "https://waveformplayer.com",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/arraypress"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "@arraypress/waveform-bar": "^1.11.0",
+    "@arraypress/waveform-player": "^1.27.0",
+    "@arraypress/waveform-playlist": "^1.8.0",
+    "@arraypress/waveform-sounds": "^0.2.0 || ^0.3.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@arraypress/waveform-bar": {
+      "optional": true
+    },
+    "@arraypress/waveform-player": {
+      "optional": true
+    },
+    "@arraypress/waveform-playlist": {
+      "optional": true
+    },
+    "@arraypress/waveform-sounds": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:pack": "npm run build && node scripts/verify-pack.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@arraypress/waveform-bar": "^1.12.2",
+    "@arraypress/waveform-player": "^1.30.2",
+    "@arraypress/waveform-playlist": "^1.9.0",
+    "@arraypress/waveform-sounds": "^0.2.0",
+    "@biomejs/biome": "^2.6.8",
+    "@types/node": "^26.6.6",
+    "@vue/test-utils": "^2.6.0",
+    "jsdom": "^31.0.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1",
+    "vue": "^3.5.46"
+  }
+}

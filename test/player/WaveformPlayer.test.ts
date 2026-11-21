@@ -59,8 +59,8 @@ vi.mock('@arraypress/waveform-player/no-autoinit', () => ({
 	WaveformPlayer: MockPlayer,
 }));
 
-import { WaveformPlayer } from '../src';
-import type { WaveformPlayerProps } from '../src';
+import { WaveformPlayer } from '../../src/player';
+import type { WaveformPlayerProps } from '../../src/player';
 
 beforeEach(() => {
 	instances.length = 0;

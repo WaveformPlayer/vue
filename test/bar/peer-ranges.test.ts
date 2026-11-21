@@ -16,7 +16,7 @@
  * a supported version. Kept identical across the four bar wrappers.
  */
 import { describe, expect, it } from 'vitest';
-import pkg from '../package.json';
+import pkg from '../../package.json';
 
 const MIN_FLOORS: Record<string, string> = {
 	'@arraypress/waveform-bar': '1.11.0',

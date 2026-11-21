@@ -12,8 +12,8 @@
  * installed — for the exported props type AND the component's runtime
  * prop declarations, whose `PropType`s derive from it.
  */
-import type { WaveformPlaylist } from '../src/WaveformPlaylist';
-import type { WaveformPlaylistProps } from '../src/types';
+import type { WaveformPlaylist } from '../../src/playlist/WaveformPlaylist';
+import type { WaveformPlaylistProps } from '../../src/playlist/types';
 
 type Equal<A, B> =
 	(<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;

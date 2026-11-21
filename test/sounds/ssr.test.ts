@@ -38,7 +38,7 @@ vi.mock('@arraypress/waveform-sounds/no-autoinit', () => {
 	return { default: Ctor, WaveformSounds: Ctor };
 });
 
-import { WaveformSounds } from '../src';
+import { WaveformSounds } from '../../src/sounds';
 
 const sounds = [
 	{ url: '/a.mp3', title: 'Kick Loop', type: 'Drums', bpm: 120, key: 'Fmin', peaks: [0.2, 0.8, 0.5] },

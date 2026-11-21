@@ -14,7 +14,7 @@
  * vue) apart from the import path.
  */
 import { describe, expectTypeOf, it } from 'vitest';
-import type { WaveformBarConfig } from '../src/types';
+import type { WaveformBarConfig } from '../../src/bar/types';
 
 describe('WaveformBarConfig — types match what the bar forwards to the player', () => {
 	it('accepts waveformGradient with the core player\'s axis union', () => {

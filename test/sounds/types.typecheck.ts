@@ -10,8 +10,8 @@
  * is a declared runtime prop, with the core's own type (the drift test
  * checks the same at runtime).
  */
-import type { WaveformSounds } from '../src/WaveformSounds';
-import type { WaveformSoundsExpose, WaveformSoundsProps } from '../src/types';
+import type { WaveformSounds } from '../../src/sounds/WaveformSounds';
+import type { WaveformSoundsExpose, WaveformSoundsProps } from '../../src/sounds/types';
 import type { SoundsColumn, SoundsFilterControl, SoundsLayout, SoundInput } from '@arraypress/waveform-sounds';
 
 type Equal<A, B> =

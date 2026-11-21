@@ -57,7 +57,7 @@ vi.mock('@arraypress/waveform-sounds/no-autoinit', () => {
 	return { default: Ctor, WaveformSounds: Ctor };
 });
 
-import { WaveformSounds } from '../src';
+import { WaveformSounds } from '../../src/sounds';
 
 beforeEach(() => {
 	ctorCalls.length = 0;
