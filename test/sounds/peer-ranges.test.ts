@@ -35,7 +35,9 @@ describe('peer dependency floors', () => {
 		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-player'], '2.0.0')).toBe(true);
 	});
 
-	it('develops against the sibling 2.0 checkout until it is published', () => {
-		expect(pkg.devDependencies['@arraypress/waveform-sounds']).toBe('file:../waveform-sounds');
+	it('develops against the published 2.0 package (a ^2.x devDependency at least the peer floor)', () => {
+		const range = pkg.devDependencies['@arraypress/waveform-sounds'];
+		expect(floor(range)[0], `@arraypress/waveform-sounds@${range} is not a ^2.x range`).toBe(2);
+		expect(atLeast(range, '2.0.0'), `@arraypress/waveform-sounds@${range} < 2.0.0`).toBe(true);
 	});
 });

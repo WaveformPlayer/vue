@@ -29,8 +29,8 @@ import typesSource from '../../src/bar/types.ts?raw';
 /**
  * The bar's `src/js/core.ts`, read from disk next to its `package.json`:
  * the 2.0 `exports` map doesn't expose `src/`, so neither a bare import nor
- * Vite's `?raw` can reach it (and a `file:` devDependency is a symlink to
- * the sibling repo, outside what Vite will serve).
+ * Vite's `?raw` can reach it (and a temporary `file:` devDependency would
+ * be a symlink outside the repo, which Vite won't serve).
  */
 const coreSource = readFileSync(
 	new URL('./src/js/core.ts', `file://${createRequire(import.meta.url).resolve('@arraypress/waveform-bar/package.json')}`),

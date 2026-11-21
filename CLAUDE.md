@@ -15,18 +15,23 @@ cores. The cores are optional peers.
 - `npm run lint` — Biome, recommended preset, formatter off.
 - `npm run build` — tsdown, one isolated ESM build per sub-path into
   `dist/<name>/` (`index.js` + `index.d.ts`). No CommonJS since 2.0.
-- `npm run test:pack` — packs the tarball (and each `file:` core) into
-  throwaway consumers: exports vs tarball, ESM-only, every sub-path imports,
+- `npm run test:pack` — packs the tarball into throwaway consumers (cores
+  from npm, or packed from a temporary `file:` devDependency): exports vs tarball, ESM-only, every sub-path imports,
   tsc NodeNext + Bundler, and a player-only consumer that bundles `./player`
   but not `./bar`. Run it whenever you touch `exports`, `files`, the build
   or a `.d.ts`.
 
 ## Dependencies
-- **devDependencies on the cores are `file:../waveform-{player,bar,playlist,sounds}`**,
-  the sibling 2.0 checkouts (branch `ts`), because 2.0 is not on npm yet. The
-  drift tests read those checkouts, so they check exactly what will ship.
-  Switch them to `^2.0.0` once the cores are published (and drop the
-  `file:` checks in the peer-range tests).
+- **devDependencies on the cores are the published `^2.0.0`**, resolved
+  from registry.npmjs.org (no `link: true` lock entries, real directories in
+  `node_modules`). The drift tests read the installed cores, and the
+  peer-range tests check each devDependency is a `^2.x` range at least the
+  peer floor. For cross-repo work before a core release, a devDependency can
+  temporarily be `file:../waveform-<name>` (the peer-range tests fail while
+  it is); switch it back and re-resolve the lock before publishing:
+  `rm -rf node_modules/@arraypress/waveform-<name>` then
+  `npm install --save-dev @arraypress/waveform-<name>@^2.x.y` (a plain
+  `npm install` after editing package.json keeps the `link: true` entry).
 - Peers: each core `^2.0.0`, optional (`peerDependenciesMeta`); `vue`
   `^3.5.0` — Vue 3.5+ only (`useId()` in `./sounds` is 3.5 API).
 - `typesVersions` is kept for TypeScript's `node10` resolution, which ignores
@@ -110,10 +115,10 @@ class copy would split `singlePlay`). `playerOptions` pass through; the
 - `test/sounds/forwarding-drift.test.ts` + `option-surface.ts`: the sounds
   core's `types/types.d.ts`, cross-checked against its `DEFAULT_OPTIONS`.
 
-The cores' `exports` maps block `src/` and `types/`, and Vite won't serve a
-`file:` symlink's target, so these files are read with `readFileSync` from
-the path beside each core's resolved `package.json`, never a package
-specifier or `?raw`.
+The cores' `exports` maps block `src/` and `types/` (and Vite won't serve a
+temporary `file:` symlink's target), so these files are read with
+`readFileSync` from the path beside each core's resolved `package.json`,
+never a package specifier or `?raw`.
 
 ## Conventions
 - Components are `defineComponent` + render functions (no SFC compile step).

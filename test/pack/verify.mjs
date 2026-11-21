@@ -20,10 +20,10 @@
  *      core instead of one combined entry.
  *
  * Nothing here reads the repo's `src/`; every assertion runs against
- * files that came out of the tarball. A core whose devDependency is a
- * `file:` checkout (the 2.0 cores, until they are on npm) is packed from
- * that checkout and installed as a tarball too; otherwise it comes from
- * the registry at the peer range.
+ * files that came out of the tarball. The cores come from the registry at
+ * the peer range; a core whose devDependency is temporarily a `file:`
+ * checkout (cross-repo work before a release) is packed from that
+ * checkout and installed as a tarball instead.
  *
  *   npm run test:pack
  *

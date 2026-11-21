@@ -21,8 +21,8 @@ import { createRequire } from 'node:module';
 /**
  * A file from an installed core, as text. Read from disk next to the core's
  * `package.json` (which both export) because neither exports its `types/`
- * directory — and from the real path, since a `file:` devDependency is a
- * symlink to a sibling repo that Vite's `?raw` would refuse to serve.
+ * directory — which also works for a temporary `file:` devDependency, a
+ * symlink outside the repo that Vite's `?raw` would refuse to serve.
  */
 const coreFile = (pkg: string, file: string): string =>
 	readFileSync(new URL(file, `file://${createRequire(import.meta.url).resolve(`${pkg}/package.json`)}`), 'utf8');

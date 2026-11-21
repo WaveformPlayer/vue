@@ -18,8 +18,8 @@ import { createRequire } from 'node:module';
  * The installed core's option types, as text: 2.0 generates them into
  * `types/types.d.ts` (the hand-written root `index.d.ts` is gone). Read from
  * disk next to the core's `package.json` because its `exports` map doesn't
- * expose `types/`, and from the real path, since the `file:` devDependency
- * is a symlink to the sibling repo that Vite's `?raw` would refuse to serve.
+ * expose `types/` — which also works for a temporary `file:` devDependency,
+ * a symlink outside the repo that Vite's `?raw` would refuse to serve.
  */
 const soundsDts = readFileSync(
 	new URL('types/types.d.ts', `file://${createRequire(import.meta.url).resolve('@arraypress/waveform-sounds/package.json')}`),
