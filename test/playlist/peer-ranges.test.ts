@@ -6,7 +6,9 @@
  * `@arraypress/waveform-playlist` 2.0: the release that strips `loop`,
  * `showLoop` and `lazy`, hands each track's `data-duration` /
  * `data-download-url` / `data-download-name` to its player, and needs
- * `@arraypress/waveform-player` 2.0 (whose options this forwards).
+ * `@arraypress/waveform-player` 2.0 (whose options this forwards); the
+ * component imports `/no-autoinit`, which playlist 2.1.0 added (2.1's root
+ * scans the page and registers `<waveform-playlist>` on import).
  * Earlier floors (1.8.0, which first honoured the constructor options and
  * callbacks) are subsumed.
  */
@@ -26,8 +28,8 @@ const atLeast = (range: string, min: string): boolean => {
 };
 
 describe('peer dependency floors', () => {
-	it('requires waveform-playlist >= 2.0.0 (per-track duration / download, the options it strips)', () => {
-		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-playlist'], '2.0.0')).toBe(true);
+	it('requires waveform-playlist >= 2.1.0 (the /no-autoinit entry)', () => {
+		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-playlist'], '2.1.0')).toBe(true);
 	});
 
 	it("requires waveform-player >= 2.0.0 (the playlist core's own floor, and the forwarded 2.0 options)", () => {
@@ -35,10 +37,13 @@ describe('peer dependency floors', () => {
 	});
 
 	it('develops against the published 2.0 packages (a ^2.x devDependency at least the peer floor)', () => {
-		for (const name of ['@arraypress/waveform-playlist', '@arraypress/waveform-player'] as const) {
+		for (const [name, min] of [
+			['@arraypress/waveform-playlist', '2.1.0'],
+			['@arraypress/waveform-player', '2.0.0'],
+		] as const) {
 			const range = pkg.devDependencies[name];
 			expect(floor(range)[0], `${name}@${range} is not a ^2.x range`).toBe(2);
-			expect(atLeast(range, '2.0.0'), `${name}@${range} < 2.0.0`).toBe(true);
+			expect(atLeast(range, min), `${name}@${range} < ${min}`).toBe(true);
 		}
 	});
 });

@@ -22,7 +22,8 @@ cores. The cores are optional peers.
   or a `.d.ts`.
 
 ## Dependencies
-- **devDependencies on the cores are the published `^2.0.0`**, resolved
+- **devDependencies on the cores are the published ranges** (`^2.1.0`;
+  `-bar` `^2.0.0`), resolved
   from registry.npmjs.org (no `link: true` lock entries, real directories in
   `node_modules`). The drift tests read the installed cores, and the
   peer-range tests check each devDependency is a `^2.x` range at least the
@@ -32,7 +33,9 @@ cores. The cores are optional peers.
   `rm -rf node_modules/@arraypress/waveform-<name>` then
   `npm install --save-dev @arraypress/waveform-<name>@^2.x.y` (a plain
   `npm install` after editing package.json keeps the `link: true` entry).
-- Peers: each core `^2.0.0`, optional (`peerDependenciesMeta`); `vue`
+- Peers: each core optional (`peerDependenciesMeta`), `^2.0.0` except
+  `-playlist` and `-sounds` at `^2.1.0` (the playlist's `/no-autoinit`
+  entry; `pickRenderOptions`, `destroy({ restore })`); `vue`
   `^3.5.0` — Vue 3.5+ only (`useId()` in `./sounds` is 3.5 API).
 - `typesVersions` is kept for TypeScript's `node10` resolution, which ignores
   `exports`; every sub-path's `.d.ts` imports only the cores' root entries.
@@ -87,15 +90,21 @@ playlist passes it to its player (usually yes). `NOT_FORWARDED` (in
 `loopLabel` (names only the loop button, which never shows). A new
 per-track field goes on `WaveformPlaylistTrackInput` and in `renderTracks()`.
 The remount watcher uses `flush: 'post'` so the constructor parses the
-freshly patched track markup.
+freshly patched track markup. Imports `@arraypress/waveform-playlist/no-autoinit`,
+never the root (since 2.1 it scans the page and registers
+`<waveform-playlist>`); the tests mock the root to throw.
 
 ### sounds — `src/sounds/WaveformSounds.ts` (three edits)
-1. Runtime prop declaration. 2. Its key in `buildOptions()` (or `RENDER_KEYS`
-if the renderer reads it). 3. `props.<key>` in the rebuild watcher's
-`serialize([...])` list — or a live setter watcher plus an entry in the
-drift test's `LIVE` map (only `loop`). `NOT_FORWARDED`: none. The host's
-`innerHTML` is the core's `renderSounds()` output and must stay
-byte-identical (`test/sounds/ssr.test.ts`); a rebuild resets it first.
+1. Runtime prop declaration. 2. Its key in `buildOptions()`. 3. `props.<key>`
+in the rebuild watcher's `serialize([...])` list — or a live setter watcher
+plus an entry in the drift test's `LIVE` map (only `loop`; a live option
+that shapes markup is read untracked in `renderView`, or a change would
+re-patch the markup under the instance). `NOT_FORWARDED`: none. The host's
+`innerHTML` is the core's `renderSounds()` output with the core's
+`pickRenderOptions()` (no hand-kept render list) and must stay
+byte-identical (`test/sounds/ssr.test.ts`). A rebuild over unchanged markup
+destroys with `{ restore: true }`; changed markup is Vue's fresh patch,
+which a plain `destroy()` leaves.
 `idPrefix` defaults to `ws-${useId()}`. The engine isn't imported here: the
 consumer registers `window.WaveformPlayer` or passes `playerClass` (a second
 class copy would split `singlePlay`). `playerOptions` pass through; the

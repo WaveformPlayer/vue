@@ -218,7 +218,7 @@ describe('against the real runtime', () => {
 		);
 		wrapper = mount(WaveformSounds, { props: { manifest: '/sounds.json', playerClass: FakePlayer }, attachTo: document.body });
 		await ready();
-		expect(fetchSpy).toHaveBeenCalledWith('/sounds.json');
+		expect(fetchSpy).toHaveBeenCalledWith('/sounds.json', expect.anything());
 		expect(wrapper.element.querySelectorAll('[data-ws-index]')).toHaveLength(3);
 		fetchSpy.mockRestore();
 	});

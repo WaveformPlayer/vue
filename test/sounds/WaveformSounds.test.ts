@@ -26,7 +26,8 @@ let holdReady = false;
 /**
  * Models the runtime's DOM contract (waveform-sounds 0.1.0): adopt a
  * server-rendered `[data-ws-list]` if the host has one, else render its
- * own markup (restored by `destroy()` — adopted markup is NOT restored);
+ * own markup (restored by `destroy()` — adopted markup only with
+ * `{ restore: true }`, waveform-sounds 2.1.0);
  * add `waveform-sounds` + `waveform-sounds--<player>` to the host, and
  * have `destroy()` remove only the ones it added (not those already
  * present). `ready` is a promise from construction.
@@ -65,13 +66,15 @@ class MockSounds {
 		this.adoptedUrls = rows.map((r) => r.dataset.url ?? '');
 		this.adoptedHidden = rows.filter((r) => r.hasAttribute('data-test-dirty')).length;
 		const original = list ? null : el.innerHTML;
+		const arrived = el.innerHTML;
 		if (!list) el.innerHTML = '<ul data-ws-list><li data-ws-index="0" data-url="/fetched.mp3"></li></ul>';
 		const modifier = `waveform-sounds--${opts.player === 'strip' ? 'strip' : 'inline'}`;
 		const added = ['waveform-sounds', modifier].filter((c) => !el.classList.contains(c));
 		el.classList.add(...added);
-		this.destroy = vi.fn(() => {
+		this.destroy = vi.fn((options?: { restore?: boolean }) => {
 			lifecycle.push(`destroy:${n}`);
 			if (original != null) el.innerHTML = original;
+			else if (options?.restore) el.innerHTML = arrived;
 			el.classList.remove(...added);
 		});
 		lifecycle.push(`construct:${n}`);
@@ -368,6 +371,7 @@ describe('WaveformSounds (Vue)', () => {
 		await flushPromises();
 
 		expect(lifecycle).toEqual(['construct:0', 'destroy:0', 'construct:1']);
+		expect(instances[0].destroy).toHaveBeenCalledWith({ restore: true });
 		expect(instances[1].opts.barWidth).toBe(3);
 		expect(instances[1].adopted).toBe(true);
 		expect(instances[1].adoptedHidden).toBe(0);
@@ -389,10 +393,15 @@ describe('WaveformSounds (Vue)', () => {
 		await flushPromises();
 		expect(instances[0].opts.loop).toBe(false);
 
+		// `loop` shapes the server markup, but a live change must not
+		// re-patch it under the instance (that would wipe its rows).
+		wrapper.findAll('[data-ws-index]').forEach((r) => r.element.setAttribute('data-test-dirty', ''));
+
 		await wrapper.setProps({ loop: true });
 		await flushPromises();
 		expect(instances).toHaveLength(1);
 		expect(instances[0].setLoop).toHaveBeenCalledWith(true);
+		expect(wrapper.findAll('[data-test-dirty]')).toHaveLength(2);
 	});
 
 	it('exposes the imperative API via the component ref', async () => {

@@ -55,6 +55,21 @@ afterEach(() => {
 });
 
 describe('server rendering', () => {
+	it('renders the Loop toggle from the loop prop (a 2.0 bug drew it pressed for loop={false})', async () => {
+		// A list that marks loops starts with the toggle on, unless `loop` says otherwise.
+		const loops = [
+			{ url: '/a.mp3', title: 'A', loop: true },
+			{ url: '/b.mp3', title: 'B' },
+		];
+		const pressed = async (props: Record<string, unknown>) => {
+			const html = await renderToString(createSSRApp({ render: () => h(WaveformSounds, props) }));
+			return /<button[^>]*data-ws-loop[\s>][^>]*aria-pressed="(\w+)"/.exec(html)?.[1];
+		};
+		expect(await pressed({ sounds: loops })).toBe('true');
+		expect(await pressed({ sounds: loops, loop: false })).toBe('false');
+		expect(await pressed({ sounds, loop: true })).toBe('true');
+	});
+
 	it("renders the core's list markup on the server, without loading the runtime", async () => {
 		const html = await renderToString(app());
 		expect(html).toContain('data-ws-list');

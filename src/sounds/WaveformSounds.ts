@@ -30,9 +30,14 @@
  * Vue owns the markup only as an `innerHTML` string: it re-patches it when
  * the string changes (new sounds, or a render option such as `columns`)
  * and never otherwise, so the runtime's DOM state (filtered rows, drawn
- * canvases) survives unrelated re-renders. A REBUILD resets the host to
- * that string before constructing, so the new instance adopts clean markup
- * rather than the old one's state.
+ * canvases) survives unrelated re-renders. The render options are the
+ * core's own list (`pickRenderOptions`), so a render option the core adds
+ * reaches the server markup with no edit here (2.0's hand-kept list lacked
+ * `loop`: `loop={false}` drew the Loop toggle pressed, then flipped on
+ * hydration). A REBUILD over unchanged markup destroys the old instance
+ * with `{ restore: true }`, so the new one adopts clean markup rather than
+ * the old one's state; changed markup is Vue's fresh patch, already in
+ * place.
  *
  * The host deliberately does **not** carry `data-waveform-sounds`: that
  * attribute drives the core's global auto-init scan, which would
@@ -85,11 +90,12 @@ import {
 	onMounted,
 	onUpdated,
 	ref,
+	toRaw,
 	watch,
 	useId,
 	type PropType,
 } from 'vue';
-import { renderSounds } from '@arraypress/waveform-sounds/render';
+import { pickRenderOptions, renderSounds } from '@arraypress/waveform-sounds/render';
 // Aliased to avoid colliding with this file's own `WaveformSounds`
 // component export. This is the core library's class type.
 import type {
@@ -108,7 +114,7 @@ import type {
 /** Minimal structural view of the instance methods the wrapper calls. */
 type SoundsInstance = {
 	ready?: Promise<void>;
-	destroy?: () => void;
+	destroy?: (options?: { restore?: boolean }) => void;
 	play?: (target?: number | string | Sound, opts?: { at?: number }) => void;
 	pause?: () => void;
 	toggle?: (target?: number | string | Sound) => void;
@@ -122,22 +128,6 @@ type SoundsInstance = {
 };
 
 type Options = Record<string, unknown>;
-
-/** The options the DOM-free renderer reads (the rest only matter at runtime). */
-const RENDER_KEYS = [
-	'player',
-	'search',
-	'filters',
-	'sorts',
-	'loopToggle',
-	'showCount',
-	'menuSearch',
-	'pageSize',
-	'columns',
-	'maxTypeChips',
-	'strings',
-	'idPrefix',
-] as const;
 
 /**
  * Copy the present (`!== undefined && !== null`) values of `keys` from the
@@ -169,8 +159,19 @@ function buildOptions(p: Options): Options {
 		/* Data */
 		'sounds',
 		'manifest',
-		/* Layout + toolbar */
-		...RENDER_KEYS,
+		/* Layout + toolbar (these also shape the markup) */
+		'player',
+		'search',
+		'filters',
+		'sorts',
+		'loopToggle',
+		'showCount',
+		'menuSearch',
+		'pageSize',
+		'columns',
+		'maxTypeChips',
+		'strings',
+		'idPrefix',
 		/* Row waveform */
 		'waveformStyle',
 		'waveformColor',
@@ -338,12 +339,21 @@ export const WaveformSounds = defineComponent({
 				key === 'idPrefix' ? (target.idPrefix ?? autoIdPrefix) : Reflect.get(target, key),
 		});
 
+		/* What the renderer reads: `p`, except that `loop` is read untracked.
+		 * It shapes the markup (the Loop toggle's starting state) but is
+		 * applied live with `setLoop()`, and re-patching the markup for it
+		 * would wipe the live instance's rows. A rebuild for another option
+		 * renders the current value; the runtime sets the toggle either way. */
+		const renderView = new Proxy(p, {
+			get: (target, key) => (key === 'loop' ? toRaw(props).loop : Reflect.get(target, key)),
+		});
+
 		/* The core's markup for `sounds`, from its DOM-free renderer — the
 		 * same function on the server and the client, so hydration matches.
-		 * Only the render options are read, so this recomputes only when
-		 * the sounds or one of those change. */
+		 * Only the render options (`pickRenderOptions`) are read, so this
+		 * recomputes only when the sounds or one of those change. */
 		const markup = computed(() =>
-			Array.isArray(props.sounds) ? renderSounds(props.sounds, pick(p, RENDER_KEYS)) : ''
+			Array.isArray(props.sounds) ? renderSounds(props.sounds, pickRenderOptions(renderView as WaveformSoundsOptions)) : ''
 		);
 
 		/*
@@ -380,6 +390,9 @@ export const WaveformSounds = defineComponent({
 		onUpdated(applyHostClasses);
 
 		let instance: SoundsInstance | null = null;
+		/* The markup `instance` was built over, to tell at teardown whether
+		 * Vue has since patched in new markup. */
+		let builtMarkup: string | null = null;
 		/* True once the current instance's `ready` has resolved; until then
 		 * exposed calls are queued on it (see `call`). */
 		let isReady = false;
@@ -391,19 +404,25 @@ export const WaveformSounds = defineComponent({
 		function teardown() {
 			if (instance && typeof instance.destroy === 'function') {
 				try {
-					instance.destroy();
+					/* Unchanged markup still carries the old instance's state
+					 * (sorted, hidden, playing rows): the core puts it back as
+					 * it arrived. Changed markup is Vue's fresh patch, which a
+					 * plain destroy() leaves in place. (A list the core built
+					 * itself — a manifest — is reset to what the host held
+					 * before either way.) */
+					instance.destroy({ restore: markup.value === builtMarkup });
 				} catch (err) {
 					console.warn('[WaveformSoundsVue] destroy() threw:', err);
 				}
 			}
 			instance = null;
+			builtMarkup = null;
 			isReady = false;
 		}
 
 		/**
-		 * @param rebuild - True when replacing an instance: the host is reset
-		 *   to the rendered markup first, so the new instance adopts a clean
-		 *   list instead of the old one's filtered / painted rows.
+		 * @param rebuild - True when replacing an instance (whose teardown
+		 *   handed back clean markup): the layout modifier is reset first.
 		 */
 		function mount(rebuild = false) {
 			const myToken = ++mountToken;
@@ -440,14 +459,12 @@ export const WaveformSounds = defineComponent({
 					opts.onError = (e: unknown, i: WaveformSoundsInstance) => emit('error', e, i);
 
 					if (rebuild) {
-						/* The runtime's destroy() restores neither adopted markup
-						 * nor classes it found already present — and the frozen
-						 * render class carries the FIRST `waveform-sounds--<player>`
-						 * modifier, so the runtime never owns it. Reset both:
-						 * clean markup to adopt, and no layout modifier, so the
-						 * new instance adds (and owns) the current one. A
-						 * modifier the consumer put in `class` is left alone. */
-						target.innerHTML = markup.value;
+						/* The runtime's destroy() leaves classes it found already
+						 * present — and the frozen render class carries the FIRST
+						 * `waveform-sounds--<player>` modifier, so the runtime
+						 * never owns it. Drop it, so the new instance adds (and
+						 * owns) the current one. A modifier the consumer put in
+						 * `class` is left alone. */
 						for (const modifier of ['waveform-sounds--inline', 'waveform-sounds--strip']) {
 							if (!appliedClasses.includes(modifier)) target.classList.remove(modifier);
 						}
@@ -456,6 +473,7 @@ export const WaveformSounds = defineComponent({
 					try {
 						const created = new Ctor(target, opts);
 						instance = created;
+						builtMarkup = markup.value;
 						void Promise.resolve(created.ready).then(() => {
 							if (instance === created) isReady = true;
 						});

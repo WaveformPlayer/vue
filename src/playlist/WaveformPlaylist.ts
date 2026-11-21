@@ -511,8 +511,11 @@ export const WaveformPlaylist = defineComponent({
 			if (!el) return;
 
 			/* Browser-only library — defer the import to the client so SSR
-			 * doesn't evaluate the audio + canvas + fetch surface. */
-			void import('@arraypress/waveform-playlist')
+			 * doesn't evaluate the audio + canvas + fetch surface.
+			 * `/no-autoinit`, never the root: since 2.1 the root scans the
+			 * page for `[data-waveform-playlist]` and registers
+			 * `<waveform-playlist>` on import. */
+			void import('@arraypress/waveform-playlist/no-autoinit')
 				.then((mod) => {
 					if (myToken !== mountToken) return; // superseded
 					const target = container.value;

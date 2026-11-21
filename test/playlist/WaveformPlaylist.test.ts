@@ -64,7 +64,13 @@ class MockPlaylist {
 	}
 }
 
-vi.mock('@arraypress/waveform-playlist', () => ({
+vi.mock('@arraypress/waveform-playlist', () => {
+	throw new Error(
+		'[test] component imported the scanning entry point; it must import @arraypress/waveform-playlist/no-autoinit'
+	);
+});
+
+vi.mock('@arraypress/waveform-playlist/no-autoinit', () => ({
 	default: MockPlaylist,
 	WaveformPlaylist: MockPlaylist,
 }));

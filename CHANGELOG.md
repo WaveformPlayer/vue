@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
+2.1.0; `-bar` stays 2.0).
+
+### Fixed — sounds (`./sounds`)
+- **`loop: false` rendered the Loop toggle pressed on the server**, then
+  flipped it on hydration: the renderer's option list didn't include
+  `loop`. The render options now come from the core's
+  `pickRenderOptions()` (`@arraypress/waveform-sounds/render`) instead of a
+  hand-kept list, so a render option the core adds reaches the server
+  markup without an edit here. `loop` is still applied live with
+  `setLoop()`: a change never re-patches the markup.
+
+### Changed
+- **sounds**: a rebuild over unchanged markup hands the next instance clean
+  rows with the core's `destroy({ restore: true })` instead of rewriting the
+  host's `innerHTML`.
+- **playlist**: imports `@arraypress/waveform-playlist/no-autoinit`. The
+  2.1 root scans the page for `[data-waveform-playlist]` and registers
+  `<waveform-playlist>` on import, which a component that builds its own
+  playlist must not trigger.
+- **Peers**: `@arraypress/waveform-playlist` and `@arraypress/waveform-sounds`
+  are `^2.1.0` (the APIs above are 2.1). `-player` and `-bar` stay
+  `^2.0.0`. All four remain optional.
+- The exposed `instance.engine` is now typed as the core's
+  `WaveformPlayer | null` (was `unknown`), from the sounds core's types.
+
 ## 2.0.0 — 2026-11-21
 
 One package replaces the four Vue wrappers, and it is built for the 2.0
