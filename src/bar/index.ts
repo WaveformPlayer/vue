@@ -1,5 +1,5 @@
 /**
- * @module @arraypress/waveform-bar-vue
+ * @module @arraypress/waveform-vue/bar
  * @description
  * Public entry point for the Vue 3 wrapper around
  * `@arraypress/waveform-bar`.
@@ -14,7 +14,7 @@
  *
  * ```vue
  * <script setup lang="ts">
- * import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-bar-vue';
+ * import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-vue/bar';
  * </script>
  * ```
  */

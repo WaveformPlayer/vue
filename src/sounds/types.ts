@@ -1,7 +1,7 @@
 /**
  * @module types
  * @description
- * Public TypeScript types for `@arraypress/waveform-sounds-vue`.
+ * Public TypeScript types for `@arraypress/waveform-vue/sounds`.
  *
  * The option surface is owned by the core, `@arraypress/waveform-sounds`,
  * whose hand-written `index.d.ts` declares {@link WaveformSoundsOptions}.
@@ -98,7 +98,7 @@ export interface WaveformSoundsEmits {
  * ```vue
  * <script setup lang="ts">
  * import { ref } from 'vue';
- * import { WaveformSounds, type WaveformSoundsExpose } from '@arraypress/waveform-sounds-vue';
+ * import { WaveformSounds, type WaveformSoundsExpose } from '@arraypress/waveform-vue/sounds';
  * const list = ref<WaveformSoundsExpose>();
  * </script>
  * <template>

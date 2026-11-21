@@ -1,7 +1,7 @@
 /**
  * @module types
  * @description
- * Public TypeScript types for `@arraypress/waveform-playlist-vue`.
+ * Public TypeScript types for `@arraypress/waveform-vue/playlist`.
  *
  * The shared option surface is owned by two core libraries and
  * re-exported / derived here rather than re-declared:
@@ -256,7 +256,7 @@ export interface WaveformPlaylistProps
  * ```vue
  * <script setup lang="ts">
  * import { ref } from 'vue';
- * import { WaveformPlaylist, type WaveformPlaylistExpose } from '@arraypress/waveform-playlist-vue';
+ * import { WaveformPlaylist, type WaveformPlaylistExpose } from '@arraypress/waveform-vue/playlist';
  * const playlist = ref<WaveformPlaylistExpose>();
  * </script>
  * <template>

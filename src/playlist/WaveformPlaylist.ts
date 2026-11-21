@@ -11,7 +11,7 @@
  * is destroyed and rebuilt.
  *
  * Authored as a `defineComponent` with a render function (rather than an
- * SFC) so the package builds with `tsup` — the same dual ESM/CJS +
+ * SFC) so the package builds with `tsdown` — the same dual ESM/CJS +
  * `.d.ts` toolchain as the React wrapper — and ships no `.vue` compile
  * step for consumers to worry about.
  *
@@ -30,14 +30,14 @@
  * The embedded player's callbacks surface as emits — `@load`, `@play`,
  * `@pause`, `@end`, `@timeupdate`, `@error`, `@nexttrack`,
  * `@previoustrack` — with the core's arguments, the same idiom as
- * `@arraypress/waveform-player-vue`. The playlist (1.8.0+) runs each after
+ * `@arraypress/waveform-vue/player`. The playlist (1.8.0+) runs each after
  * its own handling (earlier versions overwrote them, which is why this
  * wrapper used to offer none). `emit` is stable, so swapping a listener
  * never re-mounts the playlist.
  *
  * ## Identity-prop re-mount
  *
- * Like the `@arraypress/waveform-player-vue` template, this component
+ * Like the `@arraypress/waveform-vue/player` template, this component
  * re-creates the instance when any construction-time prop changes rather
  * than diffing options against the live instance. `tracks` (serialised)
  * and `layout` are the primary identity inputs; the full pass-through

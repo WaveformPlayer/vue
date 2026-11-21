@@ -1,7 +1,7 @@
 /**
  * @module types
  * @description
- * Public TypeScript types for `@arraypress/waveform-player-vue`.
+ * Public TypeScript types for `@arraypress/waveform-vue/player`.
  *
  * The shared option surface — `WaveformStyle`, `ColorPreset`,
  * `AudioMode`, `AudioPreload`, `ButtonAlign`, `WaveformMarker`,
@@ -99,7 +99,7 @@ export interface WaveformPlayerEmits {
  * ```vue
  * <script setup lang="ts">
  * import { ref } from 'vue';
- * import { WaveformPlayer, type WaveformPlayerExpose } from '@arraypress/waveform-player-vue';
+ * import { WaveformPlayer, type WaveformPlayerExpose } from '@arraypress/waveform-vue/player';
  * const player = ref<WaveformPlayerExpose>();
  * </script>
  * <template>

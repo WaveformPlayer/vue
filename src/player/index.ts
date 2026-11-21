@@ -1,12 +1,12 @@
 /**
- * @module @arraypress/waveform-player-vue
+ * @module @arraypress/waveform-vue/player
  * @description
  * Public entry point for the Vue 3 wrapper around
  * `@arraypress/waveform-player`.
  *
  * ```vue
  * <script setup lang="ts">
- * import { WaveformPlayer } from '@arraypress/waveform-player-vue';
+ * import { WaveformPlayer } from '@arraypress/waveform-vue/player';
  * </script>
  *
  * <template>
@@ -28,7 +28,7 @@
  *   AudioMode,
  *   AudioPreload,
  *   ButtonAlign,
- * } from '@arraypress/waveform-player-vue';
+ * } from '@arraypress/waveform-vue/player';
  * ```
  */
 

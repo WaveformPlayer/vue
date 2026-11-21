@@ -1,12 +1,12 @@
 /**
- * @module @arraypress/waveform-playlist-vue
+ * @module @arraypress/waveform-vue/playlist
  * @description
  * Public entry point for the Vue 3 wrapper around
  * `@arraypress/waveform-playlist`.
  *
  * ```vue
  * <script setup lang="ts">
- * import { WaveformPlaylist } from '@arraypress/waveform-playlist-vue';
+ * import { WaveformPlaylist } from '@arraypress/waveform-vue/playlist';
  *
  * const tracks = [
  *   { url: '/audio/a.mp3', title: 'Track A' },
@@ -39,7 +39,7 @@
  *   AudioMode,
  *   AudioPreload,
  *   ButtonAlign,
- * } from '@arraypress/waveform-playlist-vue';
+ * } from '@arraypress/waveform-vue/playlist';
  * ```
  */
 

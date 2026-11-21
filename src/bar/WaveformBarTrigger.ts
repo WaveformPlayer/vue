@@ -9,7 +9,7 @@
  * rest is plumbed automatically.
  *
  * Authored as a `defineComponent` with a render function (rather than
- * an SFC) so the package builds with `tsup` — the same toolchain as
+ * an SFC) so the package builds with `tsdown` — the same toolchain as
  * the rest of the family.
  *
  * ## What it renders

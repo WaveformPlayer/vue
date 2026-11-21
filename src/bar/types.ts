@@ -1,7 +1,7 @@
 /**
  * @module types
  * @description
- * Public TypeScript types for `@arraypress/waveform-bar-vue`.
+ * Public TypeScript types for `@arraypress/waveform-vue/bar`.
  *
  * Two component shapes:
  *

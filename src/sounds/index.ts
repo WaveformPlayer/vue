@@ -1,12 +1,12 @@
 /**
- * @module @arraypress/waveform-sounds-vue
+ * @module @arraypress/waveform-vue/sounds
  * @description
  * Public entry point for the Vue 3 wrapper around
  * `@arraypress/waveform-sounds`.
  *
  * ```vue
  * <script setup lang="ts">
- * import { WaveformSounds } from '@arraypress/waveform-sounds-vue';
+ * import { WaveformSounds } from '@arraypress/waveform-vue/sounds';
  * </script>
  *
  * <template>
@@ -34,7 +34,7 @@
  *   SoundsFilterControl,
  *   SoundsLoopFilter,
  *   SoundsColumn,
- * } from '@arraypress/waveform-sounds-vue';
+ * } from '@arraypress/waveform-vue/sounds';
  * ```
  */
 

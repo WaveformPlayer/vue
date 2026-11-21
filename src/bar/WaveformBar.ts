@@ -11,7 +11,7 @@
  * `<WaveformBarTrigger>`) and binds click handlers automatically.
  *
  * Authored as a `defineComponent` with a render function (rather
- * than an SFC) so the package builds with `tsup` — the same dual
+ * than an SFC) so the package builds with `tsdown` — the same dual
  * ESM/CJS + `.d.ts` toolchain as the React wrapper — and ships no
  * `.vue` compile step for consumers to worry about.
  *
@@ -33,7 +33,7 @@
  *
  * ```vue
  * <script setup lang="ts">
- * import { WaveformBar } from '@arraypress/waveform-bar-vue';
+ * import { WaveformBar } from '@arraypress/waveform-vue/bar';
  * </script>
  *
  * <template>
