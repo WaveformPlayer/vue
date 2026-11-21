@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.1.0 — 2026-11-21
 
 For the 2.1 cores (`@arraypress/waveform-player`, `-playlist` and `-sounds`
 2.1.0; `-bar` stays 2.0).
