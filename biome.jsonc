@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": { "includes": ["src/**", "test/**"] },
+  // Off for 2.0: reformatting is its own change, once a style is chosen.
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      // src/ is clean under the full recommended preset.
+      "preset": "recommended"
+    }
+  },
+  "overrides": [
+    {
+      // 2.0 moves the four 1.x suites over unchanged (every test kept as
+      // written), so rules whose fix would rewrite a test are off here only.
+      // Revisit them after 2.0, together with the other wrapper families.
+      "includes": ["test/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off" // deliberate: each `!` marks where the test relies on its own setup having run
+          },
+          "suspicious": {
+            "useIterableCallbackReturn": "off" // expression-bodied forEach callbacks; a block body is different code
+          }
+        }
+      }
+    }
+  ]
+}
