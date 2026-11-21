@@ -11,8 +11,8 @@
  * `<WaveformBarTrigger>`) and binds click handlers automatically.
  *
  * Authored as a `defineComponent` with a render function (rather
- * than an SFC) so the package builds with `tsdown` — the same dual
- * ESM/CJS + `.d.ts` toolchain as the React wrapper — and ships no
+ * than an SFC) so the package builds with `tsdown` — the same
+ * ESM + `.d.ts` toolchain as the React wrapper — and ships no
  * `.vue` compile step for consumers to worry about.
  *
  * ## Setup

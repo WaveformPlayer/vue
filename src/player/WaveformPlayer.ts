@@ -7,7 +7,7 @@
  * re-mounts when any construction prop changes.
  *
  * Authored as a `defineComponent` with a render function (rather than
- * an SFC) so the package builds with `tsdown` — the same dual ESM/CJS +
+ * an SFC) so the package builds with `tsdown` — the same ESM +
  * `.d.ts` toolchain as the React wrapper — and ships no `.vue`
  * compile step for consumers to worry about.
  *

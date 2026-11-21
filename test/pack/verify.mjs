@@ -8,10 +8,12 @@
  * the package for real, so this packs the tarball and installs it into
  * two throwaway consumers:
  *
- *   A. vue + all four cores. Every sub-path resolves under plain Node as
- *      ESM *and* CJS with exactly its expected names; the bare package
- *      name does not resolve (there is no root entry); TypeScript
- *      (NodeNext and Bundler) finds every sub-path's declarations.
+ *   A. vue + all four cores. Every sub-path imports under plain Node
+ *      with exactly its expected names; the bare package name does not
+ *      resolve (there is no root entry); TypeScript (NodeNext and
+ *      Bundler) finds every sub-path's declarations. The package is ES
+ *      modules only, like the 2.0 cores: no `.cjs`, no `require`
+ *      condition.
  *   B. vue + ONLY `@arraypress/waveform-player`. `./player` imports in
  *      Node and bundles with rolldown; `./bar` does NOT bundle, because
  *      its core is missing — the reason the package has one sub-path per
@@ -129,6 +131,11 @@ try {
 	console.log(`\nTarball (${packed[0].filename}, ${packed[0].files.length} files)`);
 	for (const t of [...targets].sort()) check(`ships ${t}`, shipped.has(t));
 	check(
+		'ESM only: no .cjs / .d.cts shipped, no `require` export condition',
+		[...shipped].every((f) => !/\.(cjs|d\.cts)(\.map)?$/.test(f)) && !JSON.stringify(pkg.exports).includes('"require"'),
+		[...shipped].filter((f) => /\.(cjs|d\.cts)(\.map)?$/.test(f)).join(', ')
+	);
+	check(
 		'ships nothing outside dist/, README.md, LICENSE, package.json',
 		[...shipped].every((f) => /^(dist\/|README\.md$|LICENSE$|package\.json$)/.test(f)),
 		[...shipped].filter((f) => !/^(dist\/|README\.md$|LICENSE$|package\.json$)/.test(f)).join(', ')
@@ -149,24 +156,20 @@ try {
 		const esm = attempt('node', ['--input-type=module', '-e',
 			`const m = await import(${JSON.stringify(spec)}); console.log(JSON.stringify(Object.keys(m).sort()));`], a);
 		check(`ESM import('${spec}') → ${names.join(', ')}`, esm[0] && esm[1].trim() === JSON.stringify(names), esm[1]);
-		const cjs = attempt('node', ['--input-type=commonjs', '-e',
-			`console.log(JSON.stringify(Object.keys(require(${JSON.stringify(spec)})).sort()))`], a);
-		check(`CJS require('${spec}') → ${names.join(', ')}`, cjs[0] && cjs[1].trim() === JSON.stringify(names), cjs[1]);
 	}
 	const root = attempt('node', ['--input-type=module', '-e', `await import(${JSON.stringify(pkg.name)})`], a);
 	check(`no root entry: import('${pkg.name}') fails with ERR_PACKAGE_PATH_NOT_EXPORTED`,
 		!root[0] && root[1].includes('ERR_PACKAGE_PATH_NOT_EXPORTED'), root[1]);
 
-	// TypeScript: every sub-path's declarations resolve, for ESM and CJS consumers.
+	// TypeScript: every sub-path's declarations resolve.
 	const imports = Object.entries(A_TYPE)
 		.map(([name, type]) => `import type { ${type} } from '${pkg.name}/${name}';\nexport type T_${name} = ${type};`)
 		.join('\n');
 	fs.writeFileSync(path.join(a, 'esm.mts'), imports);
-	fs.writeFileSync(path.join(a, 'cjs.cts'), imports);
 	fs.writeFileSync(path.join(a, 'bundler.ts'), imports);
 	const base = ['--noEmit', '--strict', '--skipLibCheck', 'false', '--lib', 'ES2022,DOM'];
-	const nodenext = attempt(TSC, [...base, '--module', 'nodenext', '--moduleResolution', 'nodenext', 'esm.mts', 'cjs.cts'], a);
-	check('tsc NodeNext (.mts + .cts) resolves every sub-path', nodenext[0], nodenext[1]);
+	const nodenext = attempt(TSC, [...base, '--module', 'nodenext', '--moduleResolution', 'nodenext', 'esm.mts'], a);
+	check('tsc NodeNext (.mts) resolves every sub-path', nodenext[0], nodenext[1]);
 	const bundler = attempt(TSC, [...base, '--module', 'esnext', '--moduleResolution', 'bundler', 'bundler.ts'], a);
 	check('tsc Bundler resolves every sub-path', bundler[0], bundler[1]);
 
@@ -179,9 +182,6 @@ try {
 	const esm = attempt('node', ['--input-type=module', '-e',
 		`const m = await import(${JSON.stringify(spec)}); console.log(JSON.stringify(Object.keys(m).sort()));`], b);
 	check(`ESM import('${spec}')`, esm[0] && esm[1].trim() === JSON.stringify(EXPECTED.player), esm[1]);
-	const cjs = attempt('node', ['--input-type=commonjs', '-e',
-		`console.log(JSON.stringify(Object.keys(require(${JSON.stringify(spec)})).sort()))`], b);
-	check(`CJS require('${spec}')`, cjs[0] && cjs[1].trim() === JSON.stringify(EXPECTED.player), cjs[1]);
 	const ok = await bundle(b, `import { WaveformPlayer } from '${spec}';\nconsole.log(WaveformPlayer);\n`);
 	check(`rolldown bundles '${spec}' (its lazy core import resolves)`, ok[0], ok[1]);
 	const bad = await bundle(b, `import { WaveformBar } from '${pkg.name}/bar';\nconsole.log(WaveformBar);\n`);

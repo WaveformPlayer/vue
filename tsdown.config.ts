@@ -6,9 +6,11 @@
  *
  * One entry per sub-path, each built on its own so no chunk is shared:
  *
- *   dist/<name>/index.js    (ESM)  — `import '@arraypress/waveform-vue/<name>'`
- *   dist/<name>/index.cjs   (CJS)  — `require(...)`
- *   dist/<name>/index.d.ts  / index.d.cts — declarations for each
+ *   dist/<name>/index.js    — `import '@arraypress/waveform-vue/<name>'`
+ *   dist/<name>/index.d.ts  — its declarations
+ *
+ * ES modules only, like the 2.0 cores: no CommonJS build. Node 22.12+
+ * (the `engines` floor) loads these through `require()` as well.
  *
  * Every wrapper `import()`s its core lazily, and bundlers resolve every
  * dynamic import at build time, so a sub-path must never reach another
@@ -17,9 +19,9 @@
  *
  * `vue` and the four cores (and their sub-path entries) are externals —
  * they resolve to the consumer's installed copies, never bundled in.
- * Matches the 1.x tsup builds: ES2022, sourcemaps, not minified, and
- * the comment policy of tsup's esbuild (JSDoc dropped, legal and
- * `@__PURE__` annotation comments kept).
+ * Matches the 1.x tsup builds' ESM half: ES2022, sourcemaps, not
+ * minified, and the comment policy of tsup's esbuild (JSDoc dropped,
+ * legal and `@__PURE__` annotation comments kept).
  *
  * Declarations: with TypeScript 7.0 the dts plugin selects its `tsgo`
  * generator, which shells out to the `tsgo` CLI. The plugin marks that
@@ -32,23 +34,16 @@ import { defineConfig, type UserConfig } from 'tsdown';
 const NAMES = ['player', 'bar', 'playlist', 'sounds'] as const;
 
 const shared: UserConfig = {
-	format: ['esm', 'cjs'],
+	format: ['esm'],
 	dts: true,
 	sourcemap: true,
 	target: 'es2022',
 	minify: false,
 	platform: 'neutral',
-	/* `.js` for ESM and `.cjs` for CJS, as tsup emitted (package is `type: module`). */
+	/* `.js` / `.d.ts`, as tsup emitted (the package is `type: module`). */
 	fixedExtension: false,
 	outputOptions: {
-		/* Each entry has a named export and `default`; CJS gets both as
-		 * `exports.*` properties, the shape tsup emitted. `named` states that
-		 * (it is what `auto` picks) and silences rolldown's MIXED_EXPORTS. */
-		exports: 'named',
 		comments: { legal: true, annotation: true, jsdoc: false },
-		/* The sources are ES modules, so strict mode is their semantics; the
-		 * CJS build must say so, as tsup's did (rolldown's `auto` omits it). */
-		strict: true,
 	},
 	deps: {
 		neverBundle: [/^vue(\/|$)/, /^@arraypress\/waveform-(player|bar|playlist|sounds)(\/|$)/],

@@ -5,44 +5,24 @@
   "type": "module",
   "exports": {
     "./player": {
-      "import": {
-        "types": "./dist/player/index.d.ts",
-        "default": "./dist/player/index.js"
-      },
-      "require": {
-        "types": "./dist/player/index.d.cts",
-        "default": "./dist/player/index.cjs"
-      }
+      "types": "./dist/player/index.d.ts",
+      "import": "./dist/player/index.js",
+      "default": "./dist/player/index.js"
     },
     "./bar": {
-      "import": {
-        "types": "./dist/bar/index.d.ts",
-        "default": "./dist/bar/index.js"
-      },
-      "require": {
-        "types": "./dist/bar/index.d.cts",
-        "default": "./dist/bar/index.cjs"
-      }
+      "types": "./dist/bar/index.d.ts",
+      "import": "./dist/bar/index.js",
+      "default": "./dist/bar/index.js"
     },
     "./playlist": {
-      "import": {
-        "types": "./dist/playlist/index.d.ts",
-        "default": "./dist/playlist/index.js"
-      },
-      "require": {
-        "types": "./dist/playlist/index.d.cts",
-        "default": "./dist/playlist/index.cjs"
-      }
+      "types": "./dist/playlist/index.d.ts",
+      "import": "./dist/playlist/index.js",
+      "default": "./dist/playlist/index.js"
     },
     "./sounds": {
-      "import": {
-        "types": "./dist/sounds/index.d.ts",
-        "default": "./dist/sounds/index.js"
-      },
-      "require": {
-        "types": "./dist/sounds/index.d.cts",
-        "default": "./dist/sounds/index.cjs"
-      }
+      "types": "./dist/sounds/index.d.ts",
+      "import": "./dist/sounds/index.js",
+      "default": "./dist/sounds/index.js"
     },
     "./package.json": "./package.json"
   },

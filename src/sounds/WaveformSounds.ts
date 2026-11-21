@@ -11,7 +11,7 @@
  * change) the instance is destroyed and rebuilt.
  *
  * Authored as a `defineComponent` with a render function (rather than an
- * SFC) so the package builds with `tsdown` — dual ESM/CJS + `.d.ts`, the
+ * SFC) so the package builds with `tsdown` — ESM + `.d.ts`, the
  * same toolchain as the other Vue wrappers — and ships no `.vue` compile
  * step for consumers.
  *
