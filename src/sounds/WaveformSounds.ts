@@ -172,6 +172,7 @@ function buildOptions(p: Options): Options {
 		'maxTypeChips',
 		'strings',
 		'idPrefix',
+		'mergeEnharmonicKeys',
 		/* Row waveform */
 		'waveformStyle',
 		'waveformColor',
@@ -285,6 +286,9 @@ export const WaveformSounds = defineComponent({
 		/** Prefix for the dropdowns' element ids. Defaults to a `useId()`-based
 		 *  one, unique per component and identical on server and client. */
 		idPrefix: { type: String, default: undefined },
+		/** One key-menu entry per key across spellings (A#m = Bbm); `false`
+		 *  keeps spellings apart. Shapes the markup. Default true (core 2.2). */
+		mergeEnharmonicKeys: { type: Boolean, default: undefined },
 
 		// ── Row waveform ───────────────────────────────────────────────
 		waveformStyle: {
@@ -516,6 +520,7 @@ export const WaveformSounds = defineComponent({
 						props.columns,
 						props.strings,
 						props.idPrefix,
+						props.mergeEnharmonicKeys,
 						props.waveformStyle,
 						props.waveformColor,
 						props.progressColor,

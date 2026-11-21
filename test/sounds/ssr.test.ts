@@ -73,7 +73,10 @@ describe('server rendering', () => {
 	it("renders the core's list markup on the server, without loading the runtime", async () => {
 		const html = await renderToString(app());
 		expect(html).toContain('data-ws-list');
-		expect(html).toContain('data-url="/a.mp3"');
+		// 2.2: rows carry only data-ws-index; the sounds travel once as inert JSON.
+		expect(html).toContain('<script type="application/json" data-ws-sounds>');
+		expect(html).toContain('"url":"/a.mp3"');
+		expect(html).not.toContain('data-url=');
 		expect(html).toContain('Bass &lt;Line&gt;'); // escaped by the core's renderer
 		expect(html).toMatch(/class="[^"]*\bwfp-host\b[^"]*\bmy-list\b[^"]*\bwaveform-sounds\b/);
 		expect(html).not.toContain('data-waveform-sounds');
@@ -90,6 +93,9 @@ describe('server rendering', () => {
 		root.innerHTML = html;
 		document.body.appendChild(root);
 		const serverRow = root.querySelector('[data-ws-index]');
+		const serverJson = root.querySelector('script[data-ws-sounds]');
+		expect(serverJson).not.toBeNull(); // the inert JSON script is part of what hydrates
+		const serverJsonText = serverJson!.textContent;
 
 		const warnings: string[] = [];
 		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...a) => warnings.push(a.join(' ')));
@@ -104,5 +110,8 @@ describe('server rendering', () => {
 		expect(runtime.constructed[0].rowsAtConstruct).toBe(2);
 		// The very same element the server sent — adopted, not re-rendered.
 		expect(runtime.constructed[0].firstRow).toBe(serverRow);
+		// The JSON script survives hydration untouched (same node, same text).
+		expect(root.querySelector('script[data-ws-sounds]')).toBe(serverJson);
+		expect(serverJson!.textContent).toBe(serverJsonText);
 	});
 });

@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/waveform-vue",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Vue 3 components for the WaveformPlayer family — one sub-path per core: player, bar, playlist and sounds. Install only the cores you use.",
   "type": "module",
   "exports": {
@@ -93,7 +93,7 @@
     "@arraypress/waveform-bar": "^2.0.0",
     "@arraypress/waveform-player": "^2.0.0",
     "@arraypress/waveform-playlist": "^2.1.0",
-    "@arraypress/waveform-sounds": "^2.1.0",
+    "@arraypress/waveform-sounds": "^2.2.0",
     "vue": "^3.5.0"
   },
   "peerDependenciesMeta": {
@@ -124,7 +124,7 @@
     "@arraypress/waveform-bar": "^2.0.0",
     "@arraypress/waveform-player": "^2.1.0",
     "@arraypress/waveform-playlist": "^2.1.0",
-    "@arraypress/waveform-sounds": "^2.1.0",
+    "@arraypress/waveform-sounds": "^2.2.0",
     "@biomejs/biome": "^2.6.8",
     "@types/node": "^26.6.6",
     "@vue/test-utils": "^2.6.0",

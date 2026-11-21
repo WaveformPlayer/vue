@@ -16,7 +16,7 @@ resolve. Each sub-path loads its core lazily with `import()`, and bundlers
 resolve every `import()` at build time, so a single entry for all four would
 fail to build for anyone who hasn't installed every core. The cores are
 optional peer dependencies: `^2.0.0` for `-player` and `-bar`, `^2.1.0` for
-`-playlist` and `-sounds`; `vue` 3.5+ is required. The package
+`-playlist` and `^2.2.0` for `-sounds`; `vue` 3.5+ is required. The package
 is ES modules only and needs Node 22.12+ to build with.
 
 Each sub-path exports the same components, props, emits, exposed API and

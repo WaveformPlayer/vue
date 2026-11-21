@@ -13,6 +13,8 @@
  * and its lifecycle is the core's own integration test's concern.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { createSSRApp, h, type App } from 'vue';
+import { renderToString } from 'vue/server-renderer';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { WaveformSounds, type WaveformSoundsExpose } from '../../src/sounds';
 
@@ -100,7 +102,10 @@ describe('against the real runtime', () => {
 		api().setFilter({ type: 'Drums' });
 		const visible = wrapper.emitted('filter')!.at(-1)![0] as Array<{ id: string }>;
 		expect(visible.map((s) => s.id)).toEqual(['kick', 'hat']);
-		expect(wrapper.element.querySelector('[data-ws-id="bass"]')!.hasAttribute('hidden')).toBe(true);
+		// 2.2: a filtered-out row leaves the DOM (rows carry no data-ws-id).
+		const titles = () =>
+			Array.from((wrapper!.element as HTMLElement).querySelectorAll('[data-ws-index] .ws-title-text'), (t) => t.textContent);
+		expect(titles()).toEqual(['Kick Loop', 'Hat Loop']);
 
 		api().play('hat');
 		expect(FakePlayer.instances[0].loads).toEqual(['/hat.mp3']);
@@ -173,6 +178,7 @@ describe('against the real runtime', () => {
 		expect(FakePlayer.instances[0].destroyed).toBe(true);
 		expect(second.visible).toHaveLength(3); // filter state did not leak in
 		expect(wrapper.element.querySelectorAll('[data-ws-index][hidden]')).toHaveLength(0);
+		expect(wrapper.element.querySelectorAll('[data-ws-index]')).toHaveLength(3); // 2.2: filtered rows leave the DOM
 		expect(wrapper.element.querySelectorAll('.is-current')).toHaveLength(0);
 		expect(wrapper.element.classList.contains('waveform-sounds--inline')).toBe(true);
 	});
@@ -232,5 +238,75 @@ describe('against the real runtime', () => {
 		wrapper = null;
 		expect((inst as unknown as { destroyed: boolean }).destroyed).toBe(true);
 		expect(FakePlayer.instances[0].destroyed).toBe(true);
+	});
+});
+
+describe('mergeEnharmonicKeys (core 2.2)', () => {
+	const keyed = [
+		{ url: '/a.mp3', title: 'A', key: 'A#m', id: 'a' },
+		{ url: '/b.mp3', title: 'B', key: 'Bbm', id: 'b' },
+		{ url: '/c.mp3', title: 'C', key: 'C', id: 'c' },
+	];
+	const keyMenu = (el: ParentNode) =>
+		Array.from(el.querySelectorAll<HTMLElement>('[data-ws-menu="key"] [role="option"]'), (o) => o.dataset.value).filter(Boolean);
+	let ssrApp: App | null = null;
+	afterEach(() => {
+		ssrApp?.unmount();
+		ssrApp = null;
+		document.body.innerHTML = '';
+	});
+
+	/** Server-render, hydrate over that HTML with the real runtime, wait for ready. */
+	async function hydrate(props: Record<string, unknown>) {
+		let exposed: WaveformSoundsExpose | null = null;
+		const make = () =>
+			createSSRApp({
+				render: () =>
+					h(WaveformSounds, {
+						...props,
+						sounds: keyed,
+						playerClass: FakePlayer,
+						ref: (r: unknown) => {
+							exposed = r as WaveformSoundsExpose | null;
+						},
+					}),
+			});
+		const html = await renderToString(make());
+		const root = document.createElement('div');
+		root.innerHTML = html;
+		document.body.appendChild(root);
+		const serverMenu = keyMenu(root);
+		const warnings: string[] = [];
+		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...a) => warnings.push(a.join(' ')));
+		ssrApp = make();
+		ssrApp.config.warnHandler = (msg) => warnings.push(msg);
+		ssrApp.mount(root);
+		const inst = await vi.waitFor(() => {
+			if (!exposed?.instance) throw new Error('not constructed yet');
+			return exposed.instance;
+		});
+		await inst.ready;
+		await flushPromises();
+		errorSpy.mockRestore();
+		return { root, inst, serverMenu, warnings };
+	}
+
+	it('false renders the spellings apart on the server and keeps them apart after hydration', async () => {
+		const { root, inst, serverMenu, warnings } = await hydrate({ mergeEnharmonicKeys: false });
+		expect(serverMenu).toEqual(['C', 'A#m', 'Bbm']);
+		expect(warnings).toEqual([]);
+		expect((inst as unknown as { options: Record<string, unknown> }).options.mergeEnharmonicKeys).toBe(false);
+		expect(keyMenu(root)).toEqual(['C', 'A#m', 'Bbm']);
+		inst.setFilter({ key: 'A#m' });
+		expect(inst.visible.map((s) => s.id)).toEqual(['a']);
+	});
+
+	it('by default the spellings are one key, on the server and after hydration', async () => {
+		const { root, inst, serverMenu, warnings } = await hydrate({});
+		expect(serverMenu).toEqual(['C', 'Bbm']);
+		expect(warnings).toEqual([]);
+		expect(keyMenu(root)).toEqual(['C', 'Bbm']);
+		inst.setFilter({ key: 'A#m' });
+		expect(inst.visible.map((s) => s.id)).toEqual(['a', 'b']);
 	});
 });

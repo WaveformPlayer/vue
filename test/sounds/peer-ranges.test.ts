@@ -3,9 +3,11 @@
  * ------------------------
  *
  * The peer floors are load-bearing, not cosmetic: this sub-path targets
- * `@arraypress/waveform-sounds` 2.1 — its server render takes the core's
- * `pickRenderOptions()` and a rebuild uses `destroy({ restore: true })`,
- * both new in 2.1.0 — and that core's own peer floor on
+ * `@arraypress/waveform-sounds` 2.2 — its server render takes the core's
+ * `pickRenderOptions()` and a rebuild uses `destroy({ restore: true })`
+ * (both 2.1.0), the markup it renders is 2.2's (rows indexing one
+ * `data-ws-sounds` JSON script, which a 2.1 runtime can't adopt) and it
+ * forwards 2.2's `mergeEnharmonicKeys` — and that core's own peer floor on
  * `@arraypress/waveform-player` is 2.0.0.
  */
 import { describe, it, expect } from 'vitest';
@@ -27,8 +29,8 @@ const atLeast = (range: string, min: string): boolean => {
 };
 
 describe('peer dependency floors', () => {
-	it('requires waveform-sounds >= 2.1.0 (pickRenderOptions, destroy({ restore }))', () => {
-		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-sounds'], '2.1.0')).toBe(true);
+	it('requires waveform-sounds >= 2.2.0 (2.2 markup, mergeEnharmonicKeys; pickRenderOptions, destroy({ restore }))', () => {
+		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-sounds'], '2.2.0')).toBe(true);
 	});
 
 	it("requires waveform-player >= 2.0.0 (the sounds core's own floor)", () => {
@@ -38,6 +40,6 @@ describe('peer dependency floors', () => {
 	it('develops against the published 2.0 package (a ^2.x devDependency at least the peer floor)', () => {
 		const range = pkg.devDependencies['@arraypress/waveform-sounds'];
 		expect(floor(range)[0], `@arraypress/waveform-sounds@${range} is not a ^2.x range`).toBe(2);
-		expect(atLeast(range, '2.1.0'), `@arraypress/waveform-sounds@${range} < 2.1.0`).toBe(true);
+		expect(atLeast(range, '2.2.0'), `@arraypress/waveform-sounds@${range} < 2.2.0`).toBe(true);
 	});
 });

@@ -23,7 +23,7 @@ cores. The cores are optional peers.
 
 ## Dependencies
 - **devDependencies on the cores are the published ranges** (`^2.1.0`;
-  `-bar` `^2.0.0`), resolved
+  `-sounds` `^2.2.0`; `-bar` `^2.0.0`), resolved
   from registry.npmjs.org (no `link: true` lock entries, real directories in
   `node_modules`). The drift tests read the installed cores, and the
   peer-range tests check each devDependency is a `^2.x` range at least the
@@ -34,8 +34,10 @@ cores. The cores are optional peers.
   `npm install --save-dev @arraypress/waveform-<name>@^2.x.y` (a plain
   `npm install` after editing package.json keeps the `link: true` entry).
 - Peers: each core optional (`peerDependenciesMeta`), `^2.0.0` except
-  `-playlist` and `-sounds` at `^2.1.0` (the playlist's `/no-autoinit`
-  entry; `pickRenderOptions`, `destroy({ restore })`); `vue`
+  `-playlist` at `^2.1.0` (its `/no-autoinit` entry) and `-sounds` at
+  `^2.2.0` (2.2's markup — rows index one `data-ws-sounds` JSON script —
+  and `mergeEnharmonicKeys`; `pickRenderOptions`, `destroy({ restore })`
+  are 2.1); `vue`
   `^3.5.0` — Vue 3.5+ only (`useId()` in `./sounds` is 3.5 API).
 - `typesVersions` is kept for TypeScript's `node10` resolution, which ignores
   `exports`; every sub-path's `.d.ts` imports only the cores' root entries.

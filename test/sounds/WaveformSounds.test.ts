@@ -25,7 +25,8 @@ let holdReady = false;
 
 /**
  * Models the runtime's DOM contract (waveform-sounds 0.1.0): adopt a
- * server-rendered `[data-ws-list]` if the host has one, else render its
+ * server-rendered `[data-ws-list]` if the host has one (since 2.2 its rows
+ * index the `<script type="application/json" data-ws-sounds>`), else render its
  * own markup (restored by `destroy()` — adopted markup only with
  * `{ restore: true }`, waveform-sounds 2.1.0);
  * add `waveform-sounds` + `waveform-sounds--<player>` to the host, and
@@ -37,7 +38,9 @@ class MockSounds {
 	opts: Record<string, unknown>;
 	/** Whether this instance adopted server-rendered markup. */
 	adopted: boolean;
-	/** `data-url` of each adopted row, and whether any was hidden. */
+	/** The url of each adopted row (its `data-ws-index` into the markup's
+	 *  `data-ws-sounds` JSON — 2.2 rows carry no sound data), and how many
+	 *  rows still carried the old instance's state. */
 	adoptedUrls: string[];
 	adoptedHidden: number;
 	ready: Promise<void>;
@@ -63,7 +66,9 @@ class MockSounds {
 		const list = el.querySelector('[data-ws-list]');
 		this.adopted = !!list;
 		const rows = Array.from(el.querySelectorAll<HTMLElement>('[data-ws-index]'));
-		this.adoptedUrls = rows.map((r) => r.dataset.url ?? '');
+		const data = el.querySelector('script[data-ws-sounds]')?.textContent;
+		const all: { url?: string }[] = data ? JSON.parse(data) : [];
+		this.adoptedUrls = rows.map((r) => all[Number(r.dataset.wsIndex)]?.url ?? '');
 		this.adoptedHidden = rows.filter((r) => r.hasAttribute('data-test-dirty')).length;
 		const original = list ? null : el.innerHTML;
 		const arrived = el.innerHTML;
@@ -108,9 +113,13 @@ describe('WaveformSounds (Vue)', () => {
 		expect(host.find('[data-ws-list]').exists()).toBe(true);
 		const rows = host.findAll('[data-ws-index]');
 		expect(rows).toHaveLength(2);
-		expect(rows[0].attributes('data-url')).toBe('/a.mp3');
-		expect(rows[0].attributes('data-key')).toBe('Fm'); // normalised by the core
-		expect(host.find('.ws-title').text()).toBe('Kick Loop');
+		// 2.2 rows carry only their index; the sounds travel once as JSON.
+		expect(rows[0].attributes('data-ws-index')).toBe('0');
+		expect(rows[0].attributes('data-url')).toBeUndefined();
+		const data = JSON.parse(host.find('script[type="application/json"][data-ws-sounds]').element.textContent ?? '[]');
+		expect(data.map((s: { url: string }) => s.url)).toEqual(['/a.mp3', '/b.mp3']);
+		expect(rows[0].find('.ws-key').text()).toBe('Fm'); // normalised by the core
+		expect(rows[0].find('.ws-title-text').text()).toBe('Kick Loop');
 	});
 
 	it("carries the core's classes so server markup is styled before hydration", () => {
