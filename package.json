@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/waveform-vue",
-  "version": "2.0.0-next.0",
+  "version": "2.0.0",
   "description": "Vue 3 components for the WaveformPlayer family — one sub-path per core: player, bar, playlist and sounds. Install only the cores you use.",
   "type": "module",
   "exports": {
