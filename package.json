@@ -70,6 +70,13 @@
   "author": "ArrayPress",
   "license": "MIT",
   "homepage": "https://waveformplayer.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WaveformPlayer/vue.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WaveformPlayer/vue/issues"
+  },
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/arraypress"
