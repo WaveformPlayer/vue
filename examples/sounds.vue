@@ -1,6 +1,6 @@
 <!--
-  examples/basic.vue
-  ------------------
+  examples/sounds.vue
+  -------------------
 
   Reference Vue 3 component demonstrating <WaveformSounds> usage.
   Copy/paste into your own Vue app (Vite, Nuxt, anywhere).
@@ -21,7 +21,7 @@ import {
 	type Sound,
 	type SoundInput,
 	type WaveformSoundsExpose,
-} from '@arraypress/waveform-sounds-vue';
+} from '@arraypress/waveform-vue/sounds';
 
 /* Imperative control via a template ref. */
 const list = ref<WaveformSoundsExpose>();

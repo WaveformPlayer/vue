@@ -1,6 +1,6 @@
 <!--
-  examples/basic.vue
-  ------------------
+  examples/player.vue
+  -------------------
 
   Reference Vue 3 component demonstrating every <WaveformPlayer> usage
   pattern this package supports. Copy/paste into your own Vue app
@@ -19,7 +19,7 @@ import {
 	WaveformPlayer,
 	type WaveformPlayerExpose,
 	type WaveformMarker,
-} from '@arraypress/waveform-player-vue';
+} from '@arraypress/waveform-vue/player';
 
 /* Imperative control via a template ref. */
 const player = ref<WaveformPlayerExpose>();

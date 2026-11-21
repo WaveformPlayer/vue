@@ -1,6 +1,6 @@
 <!--
-  examples/basic.vue
-  ------------------
+  examples/bar.vue
+  ----------------
 
   Reference Vue 3 component demonstrating <WaveformBar> + <WaveformBarTrigger>.
   Copy/paste into your own Vue app (Vite, Nuxt, anywhere).
@@ -14,7 +14,7 @@
     import '@arraypress/waveform-bar';      // sets window.WaveformBar
 -->
 <script setup lang="ts">
-import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-bar-vue';
+import { WaveformBar, WaveformBarTrigger } from '@arraypress/waveform-vue/bar';
 
 const tracks = [
 	{ url: '/audio/track-1.mp3', title: 'Midnight Dreams', artist: 'The Wavelength', artwork: '/img/1.jpg' },

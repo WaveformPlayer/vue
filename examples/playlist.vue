@@ -1,6 +1,6 @@
 <!--
-  examples/basic.vue
-  ------------------
+  examples/playlist.vue
+  ---------------------
 
   Reference Vue 3 component demonstrating <WaveformPlaylist> usage.
   Copy/paste into your own Vue app (Vite, Nuxt, anywhere).
@@ -20,7 +20,7 @@ import {
 	WaveformPlaylist,
 	type WaveformPlaylistExpose,
 	type WaveformPlaylistTrackInput,
-} from '@arraypress/waveform-playlist-vue';
+} from '@arraypress/waveform-vue/playlist';
 
 /* Imperative navigation via a template ref. */
 const playlist = ref<WaveformPlaylistExpose>();
