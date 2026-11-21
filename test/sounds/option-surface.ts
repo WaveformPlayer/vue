@@ -3,7 +3,7 @@
  * ----------------------
  *
  * The option surface this wrapper has to cover: every key of the core's
- * `WaveformSoundsOptions`, read from its hand-written `index.d.ts` as
+ * `WaveformSoundsOptions`, read from its generated `types/types.d.ts` as
  * installed in `node_modules`.
  *
  * The forwarding-drift test checks each key is either forwarded at runtime
@@ -11,10 +11,20 @@
  * wrapper hasn't wired up fails a test instead of typechecking and being
  * silently dropped.
  */
-// The installed core's declaration file, as text. A relative path (not the
-// package specifier) because the core doesn't export `./index.d.ts`. (While
-// the core is a `file:` symlink, vitest.config.ts allows Vite to read it.)
-import soundsDts from '../../node_modules/@arraypress/waveform-sounds/index.d.ts?raw';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+/**
+ * The installed core's option types, as text: 2.0 generates them into
+ * `types/types.d.ts` (the hand-written root `index.d.ts` is gone). Read from
+ * disk next to the core's `package.json` because its `exports` map doesn't
+ * expose `types/`, and from the real path, since the `file:` devDependency
+ * is a symlink to the sibling repo that Vite's `?raw` would refuse to serve.
+ */
+const soundsDts = readFileSync(
+	new URL('types/types.d.ts', `file://${createRequire(import.meta.url).resolve('@arraypress/waveform-sounds/package.json')}`),
+	'utf8'
+);
 
 /**
  * The property names declared directly on `export interface <name>` —

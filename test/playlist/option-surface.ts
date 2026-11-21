@@ -3,7 +3,8 @@
  * ----------------------
  *
  * The option surface this wrapper has to cover, read from the two cores'
- * hand-written `index.d.ts` files as installed in `node_modules`:
+ * generated `types/types.d.ts` files (2.0; the hand-written root
+ * `index.d.ts` they replaced is gone) as installed in `node_modules`:
  *
  *   - every key of the playlist core's `WaveformPlaylistOptions`, and
  *   - every key of the player core's `WaveformPlayerOptions` (the playlist
@@ -14,32 +15,20 @@
  * wrapper hasn't wired up fails a test instead of typechecking and being
  * silently dropped.
  */
-// The installed cores' declaration files, as text. Relative paths (not the
-// package specifiers) because neither core exports `./index.d.ts`.
-import playerDts from '../../node_modules/@arraypress/waveform-player/index.d.ts?raw';
-import playlistDts from '../../node_modules/@arraypress/waveform-playlist/index.d.ts?raw';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
 /**
- * The playlist options 1.8.0 declares. Unioned with whatever the installed
- * core declares, because the 1.7.x `index.d.ts` still in `node_modules`
- * until 1.8.0 is published only lists seven of them. Once 1.8.0 is
- * installed this list is redundant (but harmless).
+ * A file from an installed core, as text. Read from disk next to the core's
+ * `package.json` (which both export) because neither exports its `types/`
+ * directory — and from the real path, since a `file:` devDependency is a
+ * symlink to a sibling repo that Vite's `?raw` would refuse to serve.
  */
-const PLAYLIST_1_8_OPTIONS = [
-	'layout',
-	'continuous',
-	'expandChapters',
-	'showDuration',
-	'showChapterMarkers',
-	'chapterMarkerColor',
-	'showPlayState',
-	'showArtist',
-	'coverSize',
-	'thumbnailSize',
-	'density',
-	'coverPosition',
-	'barPosition',
-];
+const coreFile = (pkg: string, file: string): string =>
+	readFileSync(new URL(file, `file://${createRequire(import.meta.url).resolve(`${pkg}/package.json`)}`), 'utf8');
+
+const playerDts = coreFile('@arraypress/waveform-player', 'types/types.d.ts');
+const playlistDts = coreFile('@arraypress/waveform-playlist', 'types/types.d.ts');
 
 /**
  * The property names declared directly on `export interface <name>` —
@@ -75,13 +64,8 @@ export function interfaceKeys(dts: string, name: string): string[] {
 /** Every `WaveformPlayerOptions` key the installed player core declares. */
 export const PLAYER_OPTIONS = interfaceKeys(playerDts, 'WaveformPlayerOptions');
 
-/** Every playlist-own option (installed core ∪ 1.8.0). */
-export const PLAYLIST_OPTIONS = [
-	...new Set([
-		...interfaceKeys(playlistDts, 'WaveformPlaylistOptions'),
-		...PLAYLIST_1_8_OPTIONS,
-	]),
-];
+/** Every playlist-own option the installed playlist core declares. */
+export const PLAYLIST_OPTIONS = interfaceKeys(playlistDts, 'WaveformPlaylistOptions');
 
 /** The whole surface: playlist-own options plus forwarded player options. */
 export const ALL_OPTIONS = [...new Set([...PLAYLIST_OPTIONS, ...PLAYER_OPTIONS])];

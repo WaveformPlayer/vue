@@ -27,7 +27,12 @@
  *   ColorPreset,
  *   AudioMode,
  *   AudioPreload,
+ *   AudioCrossOrigin,
  *   ButtonAlign,
+ *   WaveformSeekEventDetail,
+ *   WaveformRateChangeEventDetail,
+ *   WaveformVolumeChangeEventDetail,
+ *   WaveformLoopEventDetail,
  * } from '@arraypress/waveform-vue/player';
  * ```
  */
@@ -44,5 +49,10 @@ export type {
 	ColorPreset,
 	AudioMode,
 	AudioPreload,
+	AudioCrossOrigin,
 	ButtonAlign,
+	WaveformSeekEventDetail,
+	WaveformRateChangeEventDetail,
+	WaveformVolumeChangeEventDetail,
+	WaveformLoopEventDetail,
 } from './types';

@@ -14,8 +14,15 @@ import pkg from '../../package.json';
 
 describe('core entry point', () => {
 	it('declares a peer floor that actually has the subpath', () => {
-		// `/no-autoinit` landed in core 1.27.0. Anything softer resolves to a
-		// core without it. This is the family's one hard floor, on purpose.
-		expect(pkg.peerDependencies['@arraypress/waveform-player']).toBe('^1.27.0');
+		// `/no-autoinit` landed in core 1.27.0; 2.0 keeps it (and the 2.0
+		// options and events this component forwards need 2.0 anyway).
+		expect(pkg.peerDependencies['@arraypress/waveform-player']).toBe('^2.0.0');
+	});
+
+	it('the installed core exports the subpath', async () => {
+		const corePkg = (await import('@arraypress/waveform-player/package.json')).default as {
+			exports: Record<string, unknown>;
+		};
+		expect(corePkg.exports['./no-autoinit']).toBeDefined();
 	});
 });

@@ -11,7 +11,7 @@
  * `buttonSize`, `buttonRadius` and `artworkPosition` went missing.
  *
  * Every key of `WaveformPlaylistOptions` and `WaveformPlayerOptions` (read
- * from the installed cores' `index.d.ts`, see `option-surface.ts`) must
+ * from the installed cores' `types/types.d.ts`, see `option-surface.ts`) must
  * either be forwarded — and re-mount the playlist when it changes;
  * callbacks must surface as emits — or be listed in `NOT_FORWARDED` with
  * the reason. Adding an option to a core without deciding which fails
@@ -36,11 +36,19 @@ const NOT_FORWARDED: Record<string, string> = {
 	artwork: 'per-track: data-artwork',
 	album: 'per-track: data-album',
 	markers: 'per-track: data-markers',
-	waveform: 'per-track: data-waveform',
+	waveform: 'per-track: data-waveform (an array, wp1: peaks or a URL)',
+	duration: 'per-track: data-duration (the 2.0 playlist hands it to the player)',
+	downloadUrl: 'per-track: data-download-url',
+	downloadName: 'per-track: data-download-name',
 	// Aliases / collisions.
 	style: "alias of waveformStyle; `style` falls through to the host div's inline CSS here",
-	// Owned by the playlist.
-	audioMode: 'the playlist always owns its audio (1.8.0 ignores the option)',
+	// Stripped by the 2.0 playlist (its NOT_FORWARDED), from constructor and data-*.
+	audioMode: 'the playlist always owns its audio',
+	loop: 'a looping track never fires ended, which breaks continuous auto-advance',
+	showLoop: 'its button turns that same loop on',
+	lazy: 'the playlist loads its own player',
+	// Dead without showLoop.
+	loopLabel: 'names only the loop button, which the playlist never shows (showLoop is stripped)',
 };
 
 const FORWARDED = ALL_OPTIONS.filter((key) => !(key in NOT_FORWARDED));

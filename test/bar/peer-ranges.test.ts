@@ -4,23 +4,21 @@
  *
  * The peer floors must cover everything the wrapper types and relies on:
  *
- *   - `@arraypress/waveform-bar` ≥ 1.11.0 — the newest *required* config
- *     key in `WaveformBarConfig`, `crossOrigin`, arrived in bar 1.11.0.
- *     (`barRadius` and a working `showTime: false` need bar 1.12.0, but
- *     they're optional and older bars simply ignore them, so they're
- *     documented on the type instead of raising the floor.)
- *   - `@arraypress/waveform-player` ≥ 1.8.0 — the bar drives
- *     `audioMode: 'external'` players, which crashed before core 1.8.0.
+ *   - `@arraypress/waveform-bar` ≥ 2.0.0 — the release that passes a
+ *     trigger's `duration` (seconds or a clock string) and `wp1:` peaks to
+ *     the player, as `WaveformBarTrackData` documents, and the first with
+ *     `barRadius` and `showTime: false` in every supported release.
+ *   - `@arraypress/waveform-player` ≥ 2.0.0 — the 2.0 bar's own peer.
  *
- * Dev dependencies are held to the same floors so the tests run against
- * a supported version. Kept identical across the four bar wrappers.
+ * Dev dependencies are the sibling 2.0 checkouts (`file:`) until 2.0 is
+ * on npm, so the tests run against exactly what will ship.
  */
 import { describe, expect, it } from 'vitest';
 import pkg from '../../package.json';
 
 const MIN_FLOORS: Record<string, string> = {
-	'@arraypress/waveform-bar': '1.11.0',
-	'@arraypress/waveform-player': '1.8.0',
+	'@arraypress/waveform-bar': '2.0.0',
+	'@arraypress/waveform-player': '2.0.0',
 };
 
 /** Lower bound of a `^x.y.z` range as a comparable tuple. */
@@ -52,10 +50,9 @@ describe('package.json — peer floors cover what the wrapper relies on', () => 
 			expect(atLeast(range!, min), `${name}@${range} < ${min}`).toBe(true);
 		});
 
-		it(`devDependencies["${name}"] (if present) is at least ^${min}`, () => {
-			const range = deps.devDependencies?.[name];
-			if (range === undefined) return;
-			expect(atLeast(range, min), `${name}@${range} < ${min}`).toBe(true);
+		it(`devDependencies["${name}"] is the sibling 2.0 checkout`, () => {
+			const dir = name.replace('@arraypress/', '');
+			expect(deps.devDependencies?.[name]).toBe(`file:../${dir}`);
 		});
 	}
 });

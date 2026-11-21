@@ -75,7 +75,7 @@
     "url": "https://github.com/sponsors/arraypress"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.12"
   },
   "publishConfig": {
     "access": "public",
@@ -83,10 +83,10 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@arraypress/waveform-bar": "^1.11.0",
-    "@arraypress/waveform-player": "^1.27.0",
-    "@arraypress/waveform-playlist": "^1.8.0",
-    "@arraypress/waveform-sounds": "^0.2.0 || ^0.3.0",
+    "@arraypress/waveform-bar": "^2.0.0",
+    "@arraypress/waveform-player": "^2.0.0",
+    "@arraypress/waveform-playlist": "^2.0.0",
+    "@arraypress/waveform-sounds": "^2.0.0",
     "vue": "^3.5.0"
   },
   "peerDependenciesMeta": {
@@ -114,10 +114,10 @@
     "prepublishOnly": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
-    "@arraypress/waveform-bar": "^1.12.2",
-    "@arraypress/waveform-player": "^1.30.2",
-    "@arraypress/waveform-playlist": "^1.9.0",
-    "@arraypress/waveform-sounds": "^0.2.0",
+    "@arraypress/waveform-bar": "file:../waveform-bar",
+    "@arraypress/waveform-player": "file:../waveform-player",
+    "@arraypress/waveform-playlist": "file:../waveform-playlist",
+    "@arraypress/waveform-sounds": "file:../waveform-sounds",
     "@biomejs/biome": "^2.6.8",
     "@types/node": "^26.6.6",
     "@vue/test-utils": "^2.6.0",

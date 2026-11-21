@@ -50,10 +50,14 @@ import type {
 	AudioCrossOrigin,
 	ButtonAlign,
 	ColorPreset,
+	WaveformLoopEventDetail,
 	WaveformMarker,
 	WaveformPeaks,
 	WaveformPlayerOptions,
+	WaveformRateChangeEventDetail,
+	WaveformSeekEventDetail,
 	WaveformStyle,
+	WaveformVolumeChangeEventDetail,
 } from '@arraypress/waveform-player';
 
 /**
@@ -68,6 +72,15 @@ type ArtworkPosition = NonNullable<WaveformPlayerOptions['artworkPosition']>;
 type WaveformGradient = NonNullable<WaveformPlayerOptions['waveformGradient']>;
 /** Media Session track-navigation handler (`onNextTrack` / `onPreviousTrack`). */
 type TrackNavHandler = (instance: WaveformPlayerInstance) => void;
+
+/**
+ * The 2.0 core's state-change events this component re-emits, each read from
+ * the bubbling `waveformplayer:<name>` CustomEvent the core dispatches on the
+ * host (its `detail` carries the data; the instance's own plain `Event`s carry
+ * none). All four come from the player's `<audio>`, so they fire in self mode
+ * only.
+ */
+const DOM_EVENTS = ['seek', 'ratechange', 'volumechange', 'loop'] as const;
 
 /** Minimal structural view of the methods the wrapper calls. */
 type PlayerInstance = {
@@ -106,6 +119,10 @@ function buildLibraryOptions(p: Record<string, unknown>): Record<string, unknown
 	set('audioMode', p.audioMode);
 	set('preload', p.preload);
 	set('crossOrigin', p.crossOrigin);
+	set('lazy', p.lazy);
+	/* Per-track (the core resets them on `loadTrack()`). This component
+	 * remounts on a `url` change, so each follows the url it is set with. */
+	set('duration', p.duration);
 
 	/* Waveform visualisation */
 	set('waveformStyle', p.waveformStyle);
@@ -126,6 +143,15 @@ function buildLibraryOptions(p: Record<string, unknown>): Record<string, unknown
 	set('playbackRate', p.playbackRate);
 	set('showPlaybackSpeed', p.showPlaybackSpeed);
 	set('playbackRates', p.playbackRates);
+	set('loop', p.loop);
+	set('showLoop', p.showLoop);
+	set('volume', p.volume);
+	set('showVolume', p.showVolume);
+
+	/* Download link (`downloadUrl` / `downloadName` are per-track, like `duration`) */
+	set('showDownload', p.showDownload);
+	set('downloadUrl', p.downloadUrl);
+	set('downloadName', p.downloadName);
 
 	/* UI toggles */
 	set('showControls', p.showControls);
@@ -147,6 +173,10 @@ function buildLibraryOptions(p: Record<string, unknown>): Record<string, unknown
 	set('seekValueText', p.seekValueText);
 	set('playPauseLabel', p.playPauseLabel);
 	set('speedLabel', p.speedLabel);
+	set('loopLabel', p.loopLabel);
+	set('volumeLabel', p.volumeLabel);
+	set('muteLabel', p.muteLabel);
+	set('downloadLabel', p.downloadLabel);
 
 	/* Error UI */
 	set('errorText', p.errorText);
@@ -212,7 +242,9 @@ function syncHostClasses(el: HTMLElement, applied: readonly string[], wanted: re
  *
  * Every core library option is accepted as a typed prop. Playback
  * lifecycle events surface as emits (`@load`, `@play`, `@pause`,
- * `@end`, `@timeupdate`, `@error`), each forwarding the live instance.
+ * `@end`, `@timeupdate`, `@error`), each forwarding the live instance,
+ * and the 2.0 core's state changes as `@seek`, `@ratechange`,
+ * `@volumechange` and `@loop`, each with the core's event `detail`.
  * An imperative API (`play`, `seekTo`, `loadTrack`, …) is exposed
  * through a template `ref`.
  *
@@ -235,6 +267,14 @@ export const WaveformPlayer = defineComponent({
 		audioMode: { type: String as PropType<AudioMode>, default: undefined },
 		preload: { type: String as PropType<AudioPreload>, default: undefined },
 		crossOrigin: { type: String as PropType<AudioCrossOrigin>, default: undefined },
+		/** Defer loading until the player nears the viewport (core 2.0). */
+		lazy: { type: Boolean, default: undefined },
+		/**
+		 * The track's length in seconds, shown and used for seeks until the
+		 * audio's metadata arrives (with `preload: 'none'`, once playback
+		 * starts). Per-track: set it with the `url` it belongs to.
+		 */
+		duration: { type: Number, default: undefined },
 
 		// ── Waveform visualisation ─────────────────────────────────────
 		waveformStyle: { type: String as PropType<WaveformStyle>, default: undefined },
@@ -244,6 +284,11 @@ export const WaveformPlayer = defineComponent({
 		barSpacing: { type: Number, default: undefined },
 		barRadius: { type: Number, default: undefined },
 		waveformGradient: { type: String as PropType<WaveformGradient>, default: undefined },
+		/**
+		 * Pre-computed peaks: a number array, compact `wp1:` peaks (the 2.0
+		 * core's base64url form, about a quarter of the size of a JSON array),
+		 * a `.json` peaks URL, or a JSON array string.
+		 */
 		waveform: { type: [Array, String] as PropType<WaveformPeaks>, default: undefined },
 
 		// ── Colours (string, or string[] for gradients) ────────────────
@@ -255,6 +300,22 @@ export const WaveformPlayer = defineComponent({
 		playbackRate: { type: Number, default: undefined },
 		showPlaybackSpeed: { type: Boolean, default: undefined },
 		playbackRates: { type: Array as PropType<number[]>, default: undefined },
+		/** Loop the whole track (core 2.0, self mode). */
+		loop: { type: Boolean, default: undefined },
+		/** Show a loop toggle in the meta row (core 2.0). */
+		showLoop: { type: Boolean, default: undefined },
+		/** Initial volume, 0..1 (core 2.0, self mode). */
+		volume: { type: Number, default: undefined },
+		/** Show a mute toggle and volume slider in the meta row (core 2.0). */
+		showVolume: { type: Boolean, default: undefined },
+
+		// ── Download link (core 2.0) ───────────────────────────────────
+		/** Show a download link in the meta row. */
+		showDownload: { type: Boolean, default: undefined },
+		/** The link's target (default: the track url). Per-track, like `duration`. */
+		downloadUrl: { type: String, default: undefined },
+		/** Suggested file name (default: the url's). Per-track, like `duration`. */
+		downloadName: { type: String, default: undefined },
 
 		// ── UI toggles ─────────────────────────────────────────────────
 		showControls: { type: Boolean, default: undefined },
@@ -279,6 +340,10 @@ export const WaveformPlayer = defineComponent({
 		seekValueText: { type: String, default: undefined },
 		playPauseLabel: { type: String, default: undefined },
 		speedLabel: { type: String, default: undefined },
+		loopLabel: { type: String, default: undefined },
+		volumeLabel: { type: String, default: undefined },
+		muteLabel: { type: String, default: undefined },
+		downloadLabel: { type: String, default: undefined },
 
 		// ── Error UI ───────────────────────────────────────────────────
 		errorText: { type: String, default: undefined },
@@ -317,7 +382,20 @@ export const WaveformPlayer = defineComponent({
 		/** Media Session "previous track" handler (`@previous-track`). Shows the skip-back button. */
 		onPreviousTrack: { type: Function as PropType<TrackNavHandler>, default: undefined },
 	},
-	emits: ['load', 'play', 'pause', 'end', 'timeupdate', 'error'],
+	/* Typed with the core's arguments (`WaveformPlayerEmits`); the
+	 * validators only declare the payload types and always pass. */
+	emits: {
+		load: (_instance: WaveformPlayerInstance) => true,
+		play: (_instance: WaveformPlayerInstance) => true,
+		pause: (_instance: WaveformPlayerInstance) => true,
+		end: (_instance: WaveformPlayerInstance) => true,
+		timeupdate: (_currentTime: number, _duration: number, _instance: WaveformPlayerInstance) => true,
+		error: (_error: Error, _instance: WaveformPlayerInstance) => true,
+		seek: (_detail: WaveformSeekEventDetail) => true,
+		ratechange: (_detail: WaveformRateChangeEventDetail) => true,
+		volumechange: (_detail: WaveformVolumeChangeEventDetail) => true,
+		loop: (_detail: WaveformLoopEventDetail) => true,
+	},
 	setup(props, { emit, expose, attrs }) {
 		const container = ref<HTMLDivElement | null>(null);
 
@@ -396,8 +474,8 @@ export const WaveformPlayer = defineComponent({
 			 * island on a page that *does* carry such markup (a CMS page, a
 			 * WordPress template), the root entry would silently mount players
 			 * the Vue app never asked for. Same class, same options; the only
-			 * thing it drops is the scan. Needs core >= 1.27.0, which is why
-			 * the peer floor is hard rather than soft. */
+			 * thing it drops is the scan. (The subpath arrived in core 1.27.0;
+			 * every 2.0 core has it.) */
 			void import('@arraypress/waveform-player/no-autoinit')
 				.then((mod) => {
 					if (myToken !== mountToken) return; // superseded
@@ -442,10 +520,32 @@ export const WaveformPlayer = defineComponent({
 				});
 		}
 
+		/*
+		 * `@seek`, `@ratechange`, `@volumechange`, `@loop`: the core dispatches
+		 * `waveformplayer:<name>` on the host with the data in `detail`. One
+		 * listener per event on the host serves every instance mounted into it,
+		 * so remounts need no rewiring. Only events whose target is the host
+		 * itself count (they bubble, and a slot-less host has no children of
+		 * its own, but a nested player in consumer markup must not leak in).
+		 */
+		const onDomEvent = (event: Event) => {
+			if (event.target !== container.value) return;
+			const name = event.type.slice('waveformplayer:'.length) as (typeof DOM_EVENTS)[number];
+			const detail = (event as CustomEvent).detail;
+			if (name === 'seek') emit('seek', detail);
+			else if (name === 'ratechange') emit('ratechange', detail);
+			else if (name === 'volumechange') emit('volumechange', detail);
+			else emit('loop', detail);
+		};
+		onMounted(() => {
+			for (const name of DOM_EVENTS) container.value?.addEventListener(`waveformplayer:${name}`, onDomEvent);
+		});
+
 		onMounted(mount);
 		onBeforeUnmount(() => {
 			mountToken++; // invalidate any in-flight import
 			teardown();
+			for (const name of DOM_EVENTS) container.value?.removeEventListener(`waveformplayer:${name}`, onDomEvent);
 		});
 
 		/* Re-mount on any construction-prop change. Listed exhaustively
@@ -461,6 +561,8 @@ export const WaveformPlayer = defineComponent({
 				props.audioMode,
 				props.preload,
 				props.crossOrigin,
+				props.lazy,
+				props.duration,
 				props.waveformStyle,
 				props.height,
 				props.samples,
@@ -475,6 +577,13 @@ export const WaveformPlayer = defineComponent({
 				props.playbackRate,
 				props.showPlaybackSpeed,
 				props.playbackRates,
+				props.loop,
+				props.showLoop,
+				props.volume,
+				props.showVolume,
+				props.showDownload,
+				props.downloadUrl,
+				props.downloadName,
 				props.showControls,
 				props.showInfo,
 				props.showTime,
@@ -492,6 +601,10 @@ export const WaveformPlayer = defineComponent({
 				props.seekValueText,
 				props.playPauseLabel,
 				props.speedLabel,
+				props.loopLabel,
+				props.volumeLabel,
+				props.muteLabel,
+				props.downloadLabel,
 				props.errorText,
 				props.unknownTrackText,
 				props.markers,

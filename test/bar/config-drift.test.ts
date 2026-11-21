@@ -3,12 +3,13 @@
  * test/config-drift.test.ts
  * -------------------------
  *
- * `WaveformBarConfig` is hand-written — `@arraypress/waveform-bar` ships no
- * `.d.ts` — and `config` goes to `window.WaveformBar.init()` verbatim, so
- * nothing else links the type to the bar's real option set. This test
- * parses the bar's `DEFAULTS` object straight out of the installed
- * package (it publishes `src/`) and `WaveformBarConfig` out of
- * `src/types.ts`, and fails when they drift:
+ * `WaveformBarConfig` is hand-written — this package's `.d.ts` must not
+ * depend on the bar's (it is an optional peer) — and `config` goes to
+ * `window.WaveformBar.init()` verbatim, so nothing at runtime links the
+ * type to the bar's real option set. This test parses the bar's
+ * `DEFAULTS` object straight out of the installed package's
+ * `src/js/core.ts` (2.0 ships `src/js/` for its declaration maps) and
+ * `WaveformBarConfig` out of `src/types.ts`, and fails when they drift:
  *
  *   1. every `DEFAULTS` key is typed, or listed in `NOT_TYPED` with a reason;
  *   2. every typed key is in `DEFAULTS`, or listed in `NOT_IN_DEFAULTS`;
@@ -20,9 +21,21 @@
  * Bumping the `@arraypress/waveform-bar` devDependency re-runs (1) and (2)
  * against the new release.
  */
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import coreSource from '@arraypress/waveform-bar/src/js/core.js?raw';
 import typesSource from '../../src/bar/types.ts?raw';
+
+/**
+ * The bar's `src/js/core.ts`, read from disk next to its `package.json`:
+ * the 2.0 `exports` map doesn't expose `src/`, so neither a bare import nor
+ * Vite's `?raw` can reach it (and a `file:` devDependency is a symlink to
+ * the sibling repo, outside what Vite will serve).
+ */
+const coreSource = readFileSync(
+	new URL('./src/js/core.ts', `file://${createRequire(import.meta.url).resolve('@arraypress/waveform-bar/package.json')}`),
+	'utf8'
+);
 
 /**
  * `DEFAULTS` keys deliberately absent from `WaveformBarConfig`.
@@ -45,7 +58,6 @@ const NOT_TYPED: Record<string, string> = {
 /** Typed keys that legitimately aren't in the installed bar's `DEFAULTS`. */
 const NOT_IN_DEFAULTS: Record<string, string> = {
 	mode: 'accepted by init() but deliberately not defaulted — derived from waveform/layout there',
-	barRadius: 'waveform-bar 1.12.0+; harmless once the devDependency is bumped past it',
 };
 
 /**
@@ -152,9 +164,9 @@ function topLevelKeys(source: string, marker: RegExp, what: string): string[] {
 	return keys;
 }
 
-/** Keys of the `const DEFAULTS = { … }` object literal in the bar's core.js. */
+/** Keys of the `const DEFAULTS = { … }` object literal in the bar's core.ts. */
 function defaultsKeys(source: string): string[] {
-	return topLevelKeys(source, /\bconst\s+DEFAULTS\s*=\s*\{/, 'const DEFAULTS = {…} in waveform-bar core.js');
+	return topLevelKeys(source, /\bconst\s+DEFAULTS\s*=\s*\{/, 'const DEFAULTS = {…} in waveform-bar core.ts');
 }
 
 /** Property names declared on `interface WaveformBarConfig`. */
@@ -185,6 +197,12 @@ describe('WaveformBarConfig ↔ waveform-bar DEFAULTS drift', () => {
 		for (const k of Object.keys(NOT_TYPED)) {
 			expect(defaults, `stale NOT_TYPED entry: ${k}`).toContain(k);
 			expect(typed, `${k} is typed now — drop it from NOT_TYPED`).not.toContain(k);
+		}
+	});
+
+	it('keeps NOT_IN_DEFAULTS honest (every entry is still absent from DEFAULTS)', () => {
+		for (const k of Object.keys(NOT_IN_DEFAULTS)) {
+			expect(defaults, `${k} is in DEFAULTS now — drop it from NOT_IN_DEFAULTS`).not.toContain(k);
 		}
 	});
 

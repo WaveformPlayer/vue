@@ -4,7 +4,8 @@
  * Public TypeScript types for `@arraypress/waveform-vue/sounds`.
  *
  * The option surface is owned by the core, `@arraypress/waveform-sounds`,
- * whose hand-written `index.d.ts` declares {@link WaveformSoundsOptions}.
+ * whose generated declarations (2.0: `types/types.d.ts`) declare
+ * {@link WaveformSoundsOptions}.
  * The props type here is derived from it (`Omit<>`), never re-declared, so
  * the types cannot drift from the core. (The RUNTIME prop declarations in
  * `WaveformSounds.ts` are hand-written — Vue registers props at runtime —

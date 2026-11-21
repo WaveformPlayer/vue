@@ -2,15 +2,15 @@
  * test/peer-ranges.test.ts
  * ------------------------
  *
- * The peer floors are load-bearing, not cosmetic: 0.1.0 is the first
- * `@arraypress/waveform-sounds` (and the one whose `/render` markup this
- * wrapper writes for the runtime to adopt), and the core's own peer floor
- * on `@arraypress/waveform-player` is 1.24.5.
+ * The peer floors are load-bearing, not cosmetic: this sub-path targets
+ * `@arraypress/waveform-sounds` 2.0 (generated types in `types/`, whose
+ * `/render` markup this wrapper writes for the runtime to adopt — byte-
+ * identical to 0.3.1's), and that core's own peer floor on
+ * `@arraypress/waveform-player` is 2.0.0.
  */
 import { describe, it, expect } from 'vitest';
 import pkg from '../../package.json';
 
-/** The lowest version a `^x.y.z` range admits, as comparable numbers. */
 /** The lowest version a range accepts: `^x.y.z`, or a `||` union of them. */
 const floor = (range: string): number[] => {
 	const parts = range.split('||').map((part) => {
@@ -27,11 +27,15 @@ const atLeast = (range: string, min: string): boolean => {
 };
 
 describe('peer dependency floors', () => {
-	it('requires waveform-sounds >= 0.1.0', () => {
-		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-sounds'], '0.1.0')).toBe(true);
+	it('requires waveform-sounds >= 2.0.0', () => {
+		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-sounds'], '2.0.0')).toBe(true);
 	});
 
-	it("requires waveform-player >= 1.24.5 (the sounds core's own floor)", () => {
-		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-player'], '1.24.5')).toBe(true);
+	it("requires waveform-player >= 2.0.0 (the sounds core's own floor)", () => {
+		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-player'], '2.0.0')).toBe(true);
+	});
+
+	it('develops against the sibling 2.0 checkout until it is published', () => {
+		expect(pkg.devDependencies['@arraypress/waveform-sounds']).toBe('file:../waveform-sounds');
 	});
 });

@@ -30,10 +30,9 @@
  * The embedded player's callbacks surface as emits — `@load`, `@play`,
  * `@pause`, `@end`, `@timeupdate`, `@error`, `@nexttrack`,
  * `@previoustrack` — with the core's arguments, the same idiom as
- * `@arraypress/waveform-vue/player`. The playlist (1.8.0+) runs each after
- * its own handling (earlier versions overwrote them, which is why this
- * wrapper used to offer none). `emit` is stable, so swapping a listener
- * never re-mounts the playlist.
+ * `@arraypress/waveform-vue/player`. The playlist runs each after its own
+ * handling. `emit` is stable, so swapping a listener never re-mounts the
+ * playlist.
  *
  * ## Identity-prop re-mount
  *
@@ -152,11 +151,13 @@ function buildPlaylistOptions(p: Record<string, unknown>): Record<string, unknow
 	set('barPosition', p.barPosition);
 
 	/* Pass-through player options — forwarded to the embedded player the
-	 * playlist drives. Per-track content (url/title/artist/artwork/album/
-	 * markers/waveform) is NOT here; it comes from the rendered markup.
-	 * `audioMode` is deliberately absent: the playlist always owns its
-	 * audio (1.8.0 ignores the option), and an `'external'` embedded player
-	 * would dispatch request-play events nobody answers. */
+	 * playlist drives. Per-track fields (url/title/artist/artwork/album/
+	 * markers/waveform/duration/downloadUrl/downloadName) are NOT here; they
+	 * come from the rendered `[data-track]` markup. Never forwarded, because
+	 * the 2.0 playlist strips them: `audioMode` (it owns its audio), `loop`
+	 * and `showLoop` (a looping track never ends, which stops `continuous`)
+	 * and `lazy` (it loads its own player); `loopLabel` names only the loop
+	 * button, which therefore never shows. */
 	set('preload', p.preload);
 	set('crossOrigin', p.crossOrigin);
 
@@ -180,6 +181,11 @@ function buildPlaylistOptions(p: Record<string, unknown>): Record<string, unknow
 	set('showPlaybackSpeed', p.showPlaybackSpeed);
 	set('playbackRates', p.playbackRates);
 
+	/* Volume + download (core 2.0). The link's target is per-track. */
+	set('showVolume', p.showVolume);
+	set('volume', p.volume);
+	set('showDownload', p.showDownload);
+
 	/* UI toggles */
 	set('showControls', p.showControls);
 	set('showInfo', p.showInfo);
@@ -200,6 +206,9 @@ function buildPlaylistOptions(p: Record<string, unknown>): Record<string, unknow
 	set('playPauseLabel', p.playPauseLabel);
 	set('speedLabel', p.speedLabel);
 	set('artworkAlt', p.artworkAlt);
+	set('volumeLabel', p.volumeLabel);
+	set('muteLabel', p.muteLabel);
+	set('downloadLabel', p.downloadLabel);
 
 	/* Error UI */
 	set('errorText', p.errorText);
@@ -243,7 +252,9 @@ function renderTracks(tracks: WaveformPlaylistTrackInput[]): VNode[] {
 				'data-artist': track.artist,
 				'data-artwork': track.artwork,
 				'data-album': track.album,
-				'data-duration': track.duration,
+				'data-duration': track.duration === undefined ? undefined : String(track.duration),
+				'data-download-url': track.downloadUrl,
+				'data-download-name': track.downloadName,
 				'data-markers': track.markers ? JSON.stringify(track.markers) : undefined,
 				'data-waveform': Array.isArray(track.waveform)
 					? JSON.stringify(track.waveform)
@@ -378,6 +389,16 @@ export const WaveformPlaylist = defineComponent({
 		showPlaybackSpeed: { type: Boolean, default: undefined },
 		playbackRates: { type: Array as PropType<number[]>, default: undefined },
 
+		// ── Volume + download (core 2.0) ───────────────────────────────
+		// `loop`, `showLoop`, `lazy` and `loopLabel` are not props: the 2.0
+		// playlist never passes them to its player.
+		/** Show a mute toggle and volume slider in the player's meta row. */
+		showVolume: { type: Boolean, default: undefined },
+		/** Initial volume, 0..1. */
+		volume: { type: Number, default: undefined },
+		/** Show a download link for the current track (each track's `downloadUrl`, else its `url`). */
+		showDownload: { type: Boolean, default: undefined },
+
 		// ── UI toggles ─────────────────────────────────────────────────
 		showControls: { type: Boolean, default: undefined },
 		showInfo: { type: Boolean, default: undefined },
@@ -404,6 +425,9 @@ export const WaveformPlaylist = defineComponent({
 		playPauseLabel: { type: String, default: undefined },
 		speedLabel: { type: String, default: undefined },
 		artworkAlt: { type: String, default: undefined },
+		volumeLabel: { type: String, default: undefined },
+		muteLabel: { type: String, default: undefined },
+		downloadLabel: { type: String, default: undefined },
 
 		// ── Error UI ───────────────────────────────────────────────────
 		errorText: { type: String, default: undefined },
@@ -577,6 +601,9 @@ export const WaveformPlaylist = defineComponent({
 				props.playbackRate,
 				props.showPlaybackSpeed,
 				props.playbackRates,
+				props.showVolume,
+				props.volume,
+				props.showDownload,
 				props.showControls,
 				props.showInfo,
 				props.showTime,
@@ -594,6 +621,9 @@ export const WaveformPlaylist = defineComponent({
 				props.playPauseLabel,
 				props.speedLabel,
 				props.artworkAlt,
+				props.volumeLabel,
+				props.muteLabel,
+				props.downloadLabel,
 				props.errorText,
 				props.unknownTrackText,
 				props.showMarkers,

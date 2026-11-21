@@ -4,16 +4,15 @@
  *
  * Type-level assertions, checked by `npm run typecheck` (not vitest).
  *
- * The playlist's layout options are typed through `PlaylistOption`, which
- * reads the installed playlist core and falls back to the 1.8.0 declaration
- * for keys an older core leaves to its `unknown` index signature. These
- * assertions hold against both, so the props never silently degrade to
- * `unknown` (or narrow back to `'list' | 'minimal'`) whichever core is
- * installed — for the exported props type AND the component's runtime
- * prop declarations, whose `PropType`s derive from it.
+ * The playlist's layout options are typed straight from the installed
+ * playlist core. These assertions keep them from silently degrading to
+ * `unknown` (the core's options interface has an index signature) or
+ * narrowing — for the exported props type AND the component's runtime
+ * prop declarations, whose `PropType`s derive from it — and pin the 2.0
+ * track input shape and which player options are (not) props.
  */
 import type { WaveformPlaylist } from '../../src/playlist/WaveformPlaylist';
-import type { WaveformPlaylistProps } from '../../src/playlist/types';
+import type { WaveformPlaylistProps, WaveformPlaylistTrackInput } from '../../src/playlist/types';
 
 type Equal<A, B> =
 	(<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -34,3 +33,17 @@ assert<Equal<RuntimeProps['layout'], 'list' | 'minimal' | 'hero' | 'grid' | unde
 assert<Equal<RuntimeProps['density'], 'comfortable' | 'compact' | undefined>>();
 assert<Equal<RuntimeProps['coverPosition'], 'left' | 'top' | undefined>>();
 assert<Equal<RuntimeProps['barPosition'], 'top' | 'bottom' | undefined>>();
+
+// Track input (2.0): duration in seconds or as a clock string; per-track download target.
+assert<Equal<WaveformPlaylistTrackInput['duration'], number | string | undefined>>();
+assert<Equal<WaveformPlaylistTrackInput['downloadUrl'], string | undefined>>();
+assert<Equal<WaveformPlaylistTrackInput['downloadName'], string | undefined>>();
+assert<Equal<WaveformPlaylistTrackInput['waveform'], number[] | string | undefined>>();
+
+// The 2.0 root-level player options the playlist passes on are props…
+assert<Equal<WaveformPlaylistProps['showVolume'], boolean | undefined>>();
+assert<Equal<WaveformPlaylistProps['volume'], number | null | undefined>>();
+assert<Equal<RuntimeProps['showDownload'], boolean | undefined>>();
+// …and what it strips, or takes per track, is not.
+type NotProps = 'loop' | 'showLoop' | 'lazy' | 'loopLabel' | 'duration' | 'downloadUrl' | 'downloadName' | 'audioMode';
+assert<Equal<Extract<keyof WaveformPlaylistProps, NotProps>, never>>();

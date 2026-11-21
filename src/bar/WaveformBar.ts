@@ -78,6 +78,11 @@ type BarGlobal = {
  * loading (the side-effecting import sets the global); the wrapper
  * always talks to the bar through `window.WaveformBar`, mirroring
  * the React wrapper.
+ *
+ * The 2.0 bar declares `Window.WaveformBar` itself (`declare global` in
+ * its generated types). This reads it through a structural view instead
+ * of declaring anything global, so the two can't conflict and this
+ * package's own `.d.ts` never references the bar's types.
  */
 function getBarGlobal(): BarGlobal | null {
 	return (

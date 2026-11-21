@@ -2,13 +2,13 @@
  * test/peer-ranges.test.ts
  * ------------------------
  *
- * The peer floors are load-bearing, not cosmetic. Below
- * `@arraypress/waveform-playlist@1.8.0` the playlist ignored the
- * constructor options this wrapper passes (`showDuration`, `expandChapters`,
- * …), overwrote the forwarded player callbacks, never read `data-waveform`,
- * and wiped the rendered tracks in `destroy()` — so every prop change
- * re-mounted an empty playlist. 1.8.0 in turn needs
- * `@arraypress/waveform-player@1.24.5`.
+ * The peer floors are load-bearing, not cosmetic. This sub-path targets
+ * `@arraypress/waveform-playlist` 2.0: the release that strips `loop`,
+ * `showLoop` and `lazy`, hands each track's `data-duration` /
+ * `data-download-url` / `data-download-name` to its player, and needs
+ * `@arraypress/waveform-player` 2.0 (whose options this forwards).
+ * Earlier floors (1.8.0, which first honoured the constructor options and
+ * callbacks) are subsumed.
  */
 import { describe, it, expect } from 'vitest';
 import pkg from '../../package.json';
@@ -26,11 +26,16 @@ const atLeast = (range: string, min: string): boolean => {
 };
 
 describe('peer dependency floors', () => {
-	it('requires waveform-playlist >= 1.8.0 (the release that makes these props work)', () => {
-		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-playlist'], '1.8.0')).toBe(true);
+	it('requires waveform-playlist >= 2.0.0 (per-track duration / download, the options it strips)', () => {
+		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-playlist'], '2.0.0')).toBe(true);
 	});
 
-	it('requires waveform-player >= 1.24.5 (the playlist core\'s own floor)', () => {
-		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-player'], '1.24.5')).toBe(true);
+	it("requires waveform-player >= 2.0.0 (the playlist core's own floor, and the forwarded 2.0 options)", () => {
+		expect(atLeast(pkg.peerDependencies['@arraypress/waveform-player'], '2.0.0')).toBe(true);
+	});
+
+	it('develops against the sibling 2.0 checkouts until they are published', () => {
+		expect(pkg.devDependencies['@arraypress/waveform-playlist']).toBe('file:../waveform-playlist');
+		expect(pkg.devDependencies['@arraypress/waveform-player']).toBe('file:../waveform-player');
 	});
 });

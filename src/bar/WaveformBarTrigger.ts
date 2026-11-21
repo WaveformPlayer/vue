@@ -101,10 +101,12 @@ export const WaveformBarTrigger = defineComponent({
 		album: { type: String, default: undefined },
 		artwork: { type: String, default: undefined },
 		link: { type: String, default: undefined },
+		/** Track length: seconds or a clock string (`'3:07'`); the 2.0 bar passes it to the player. */
 		duration: { type: [String, Number], default: undefined },
 		bpm: { type: [String, Number], default: undefined },
 		musicalKey: { type: String, default: undefined },
 		meta: { type: Array as PropType<string[]>, default: undefined },
+		/** Peaks: an array, compact `wp1:` peaks or a `.json` URL. */
 		waveform: { type: [Array, String] as PropType<number[] | string>, default: undefined },
 		markers: { type: Array as PropType<WaveformBarMarker[]>, default: undefined },
 		favorited: { type: Boolean, default: undefined },

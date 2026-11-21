@@ -11,12 +11,13 @@
  *
  * Two sources, unioned:
  *
- *  - `DEFAULT_OPTIONS` from the core's `src/js/themes.js` — the runtime
+ *  - `DEFAULT_OPTIONS` from the core's `src/js/themes.ts` — the runtime
  *    option list. The core publishes `src/` but not through its `exports`
  *    map, so it's loaded by file path resolved from the package root.
- *  - the keys of `WaveformPlayerOptions` in the core's hand-written
- *    `index.d.ts` — adds the typed keys that have no default (`src`,
- *    `style`, `waveform`).
+ *  - the keys of `WaveformPlayerOptions` in the core's generated
+ *    `types/types.d.ts` (2.0 moved the interface there from the
+ *    hand-written root `index.d.ts`) — adds the typed keys that have no
+ *    default (`src`, `style`, `waveform`).
  *
  * Shared verbatim across the four player wrappers.
  */
@@ -28,15 +29,15 @@ const coreRoot = dirname(
 	createRequire(import.meta.url).resolve('@arraypress/waveform-player/package.json')
 );
 
-/** The installed core's `themes.js` module (DEFAULT_OPTIONS + playback-rate bounds). */
+/** The installed core's `themes.ts` module (DEFAULT_OPTIONS + playback-rate bounds). */
 export async function loadCoreThemes(): Promise<{
 	DEFAULT_OPTIONS: Record<string, unknown>;
 	PLAYBACK_RATE_MIN: number;
 	PLAYBACK_RATE_MAX: number;
 }> {
-	const mod = await import(/* @vite-ignore */ join(coreRoot, 'src/js/themes.js'));
+	const mod = await import(/* @vite-ignore */ join(coreRoot, 'src/js/themes.ts'));
 	if (!mod.DEFAULT_OPTIONS) {
-		throw new Error(`[test] DEFAULT_OPTIONS not found in ${coreRoot}/src/js/themes.js`);
+		throw new Error(`[test] DEFAULT_OPTIONS not found in ${coreRoot}/src/js/themes.ts`);
 	}
 	return mod;
 }
@@ -45,15 +46,15 @@ export async function loadCoreThemes(): Promise<{
 export async function loadParseDataAttributes(): Promise<
 	(el: { dataset: Record<string, string> }) => Record<string, unknown>
 > {
-	const mod = await import(/* @vite-ignore */ join(coreRoot, 'src/js/utils.js'));
+	const mod = await import(/* @vite-ignore */ join(coreRoot, 'src/js/utils.ts'));
 	return mod.parseDataAttributes;
 }
 
-/** Keys of `WaveformPlayerOptions` as declared in the core's `index.d.ts`. */
+/** Keys of `WaveformPlayerOptions` as declared in the core's `types/types.d.ts`. */
 export function loadTypedOptionKeys(): string[] {
-	const dts = readFileSync(join(coreRoot, 'index.d.ts'), 'utf8');
+	const dts = readFileSync(join(coreRoot, 'types/types.d.ts'), 'utf8');
 	const body = /export interface WaveformPlayerOptions\s*\{([\s\S]*?)\n\}/.exec(dts)?.[1];
-	if (!body) throw new Error('[test] WaveformPlayerOptions not found in the core index.d.ts');
+	if (!body) throw new Error('[test] WaveformPlayerOptions not found in the core types/types.d.ts');
 	return [...body.matchAll(/^\s+(\w+)\??\s*:/gm)].map((m) => m[1]);
 }
 
@@ -102,10 +103,13 @@ const SAMPLE_OVERRIDES: Record<string, [unknown, unknown]> = {
 	buttonRadius: [0, '0.5rem'],
 	artworkPosition: ['button', 'info'],
 	bpm: [120, 128],
-	waveform: [
-		[0.1, 0.5],
-		[0.2, 0.6],
-	],
+	// Core 2.0: per-track length, initial volume and download target (null defaults).
+	duration: [187, 225],
+	volume: [0.5, 0.25],
+	downloadUrl: ['/a-full.wav', '/b-full.wav'],
+	downloadName: ['a.wav', 'b.wav'],
+	// An array, then compact `wp1:` peaks (2.0), which pass through as a string.
+	waveform: [[0.1, 0.5], 'wp1:AID_'],
 	markers: [[{ time: 1, label: 'A' }], [{ time: 2, label: 'B' }]],
 	playbackRates: [
 		[0.5, 1],

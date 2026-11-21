@@ -7,9 +7,9 @@
  * `AudioMode`, `AudioPreload`, `ButtonAlign`, `WaveformMarker`,
  * `WaveformPeaks`, and the full per-option list behind
  * `WaveformPlayerProps` — is owned by the core library and re-exported
- * / extended here rather than re-declared. The core's hand-authored
- * `index.d.ts` is the single source of truth, so these types can never
- * drift out of sync with it.
+ * / extended here rather than re-declared. The core's declarations,
+ * generated from its TypeScript source since 2.0, are the single source
+ * of truth, so these types can never drift out of sync with it.
  *
  * This module only adds the Vue-specific surface:
  *
@@ -22,8 +22,12 @@
  * @see {@link https://github.com/WaveformPlayer/waveform-player} — core library
  */
 import type {
+	WaveformLoopEventDetail,
 	WaveformPlayer,
 	WaveformPlayerOptions,
+	WaveformRateChangeEventDetail,
+	WaveformSeekEventDetail,
+	WaveformVolumeChangeEventDetail,
 } from '@arraypress/waveform-player';
 
 /**
@@ -40,6 +44,11 @@ export type {
 	ButtonAlign,
 	WaveformMarker,
 	WaveformPeaks,
+	AudioCrossOrigin,
+	WaveformSeekEventDetail,
+	WaveformRateChangeEventDetail,
+	WaveformVolumeChangeEventDetail,
+	WaveformLoopEventDetail,
 } from '@arraypress/waveform-player';
 
 /**
@@ -55,6 +64,12 @@ export type {
  * must know whether one is supplied — the core shows the lock-screen skip
  * button whenever it is.
  *
+ * `waveform` takes a number array, compact `wp1:` peaks (the 2.0 core's
+ * base64url string, about a quarter of the size of a JSON array), a
+ * `.json` peaks URL or a JSON array string. `duration`, `downloadUrl` and
+ * `downloadName` are per-track: the component remounts when `url` changes,
+ * so set each together with the `url` it belongs to.
+ *
  * `class`, `style`, and `id` are intentionally not listed: Vue's
  * attribute fall-through applies them to the root element
  * automatically (the base class `wfp-host` is always present and
@@ -68,12 +83,15 @@ export type WaveformPlayerProps = Omit<
 >;
 
 /**
- * Events emitted by `<WaveformPlayer>`. Each maps to the core
- * library's same-named option callback and forwards the live
- * `WaveformPlayer` instance.
+ * Events emitted by `<WaveformPlayer>`. The first six map to the core
+ * library's same-named option callback and forward its arguments, ending
+ * with the live `WaveformPlayer` instance. `seek`, `ratechange`,
+ * `volumechange` and `loop` (core 2.0) carry the `detail` of the core's
+ * `waveformplayer:<name>` event, which includes `player` and `url`; they
+ * come from the player's own `<audio>`, so they fire in self mode only.
  *
  * ```vue
- * <WaveformPlayer @play="onPlay" @timeupdate="onTick" />
+ * <WaveformPlayer @play="onPlay" @timeupdate="onTick" @volumechange="(d) => save(d.volume)" />
  * ```
  */
 export interface WaveformPlayerEmits {
@@ -89,6 +107,14 @@ export interface WaveformPlayerEmits {
 	(e: 'timeupdate', currentTime: number, duration: number, instance: WaveformPlayer): void;
 	/** Fired on audio load / playback error. */
 	(e: 'error', error: Error, instance: WaveformPlayer): void;
+	/** Fired when the audio lands on a new position (any seek, and a whole-track loop's wrap). */
+	(e: 'seek', detail: WaveformSeekEventDetail): void;
+	/** Fired when the playback rate changes. */
+	(e: 'ratechange', detail: WaveformRateChangeEventDetail): void;
+	/** Fired when the volume or muted state changes. */
+	(e: 'volumechange', detail: WaveformVolumeChangeEventDetail): void;
+	/** Fired when the loop state changes (`loop`, and the section `start` / `end` or `null`). */
+	(e: 'loop', detail: WaveformLoopEventDetail): void;
 }
 
 /**

@@ -119,6 +119,89 @@ describe('WaveformPlaylist (Vue)', () => {
 		expect(c.hasAttribute('data-waveform')).toBe(false);
 	});
 
+	it('renders compact wp1: peaks as data-waveform verbatim', () => {
+		const wrapper = mount(WaveformPlaylist, { props: { tracks: [{ url: '/a.mp3', waveform: 'wp1:AID_' }] } });
+		expect(wrapper.find('[data-track]').attributes('data-waveform')).toBe('wp1:AID_');
+	});
+
+	it('renders a track duration given as seconds or a clock string as data-duration', () => {
+		const wrapper = mount(WaveformPlaylist, {
+			props: { tracks: [{ url: '/a.mp3', duration: 225 }, { url: '/b.mp3', duration: '3:45' }, { url: '/c.mp3' }] },
+		});
+		const [a, b, c] = wrapper.findAll('[data-track]');
+		expect(a.attributes('data-duration')).toBe('225');
+		expect(b.attributes('data-duration')).toBe('3:45');
+		expect(c.attributes('data-duration')).toBeUndefined();
+	});
+
+	it('renders downloadUrl / downloadName as data-download-url / data-download-name', () => {
+		const wrapper = mount(WaveformPlaylist, {
+			props: { tracks: [{ url: '/a.mp3', downloadUrl: '/full/a.wav', downloadName: 'A.wav' }, { url: '/b.mp3' }] },
+		});
+		const [a, b] = wrapper.findAll('[data-track]');
+		expect(a.attributes('data-download-url')).toBe('/full/a.wav');
+		expect(a.attributes('data-download-name')).toBe('A.wav');
+		expect(b.attributes('data-download-url')).toBeUndefined();
+		expect(b.attributes('data-download-name')).toBeUndefined();
+	});
+
+	it('rebuilds with the new per-track duration / download target when the tracks change', async () => {
+		const wrapper = mount(WaveformPlaylist, {
+			props: { tracks: [{ url: '/a.mp3', duration: 100, downloadUrl: '/full/a.wav' }] },
+		});
+		await flushPromises();
+		await wrapper.setProps({ tracks: [{ url: '/a.mp3', duration: 101, downloadUrl: '/full/a2.wav' }] });
+		await flushPromises();
+		expect(instances).toHaveLength(2);
+		const track = instances[1].el.querySelector<HTMLElement>('[data-track]')!;
+		expect(track.dataset.duration).toBe('101');
+		expect(track.dataset.downloadUrl).toBe('/full/a2.wav');
+	});
+
+	it('forwards the 2.0 root-level player options (volume, download, labels)', async () => {
+		const set = {
+			showVolume: true,
+			volume: 0.5,
+			showDownload: true,
+			volumeLabel: 'Lautstärke',
+			muteLabel: 'Stumm',
+			downloadLabel: 'Herunterladen',
+		};
+		mount(WaveformPlaylist, { props: { tracks: tracksA, ...set } });
+		await flushPromises();
+		expect(instances[0].opts).toMatchObject(set);
+	});
+
+	it('leaves the 2.0 root-level options out when unset, and forwards volume 0 / false', async () => {
+		mount(WaveformPlaylist, { props: { tracks: tracksA } });
+		await flushPromises();
+		for (const key of ['showVolume', 'volume', 'showDownload', 'volumeLabel', 'muteLabel', 'downloadLabel']) {
+			expect(key in instances[0].opts, key).toBe(false);
+		}
+		mount(WaveformPlaylist, { props: { tracks: tracksA, volume: 0, showVolume: false, showDownload: false } });
+		await flushPromises();
+		expect(instances[1].opts).toMatchObject({ volume: 0, showVolume: false, showDownload: false });
+	});
+
+	it('never forwards what the 2.0 playlist strips (loop, showLoop, lazy, loopLabel) or per-track fields', async () => {
+		mount(WaveformPlaylist, {
+			props: { tracks: tracksA },
+			attrs: {
+				loop: true,
+				showLoop: true,
+				lazy: true,
+				loopLabel: 'Repeat',
+				duration: 99,
+				downloadUrl: '/x.wav',
+				downloadName: 'x.wav',
+			},
+		});
+		await flushPromises();
+		for (const key of ['loop', 'showLoop', 'lazy', 'loopLabel', 'duration', 'downloadUrl', 'downloadName']) {
+			expect(key in instances[0].opts, key).toBe(false);
+		}
+	});
+
 	it('constructs the core instance over the host', async () => {
 		const wrapper = mount(WaveformPlaylist, { props: { tracks: tracksA } });
 		await flushPromises();
@@ -215,8 +298,8 @@ describe('WaveformPlaylist (Vue)', () => {
 
 	it('does not forward audioMode (the playlist always owns its audio)', async () => {
 		// An `'external'` player inside a playlist dispatches request-play
-		// events nobody answers; playlist 1.8.0 ignores the option, and the
-		// wrapper no longer declares or forwards it.
+		// events nobody answers; the playlist strips the option, and the
+		// wrapper neither declares nor forwards it.
 		mount(WaveformPlaylist, {
 			props: { tracks: tracksA },
 			attrs: { audioMode: 'external' },

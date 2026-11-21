@@ -60,7 +60,15 @@ vi.mock('@arraypress/waveform-player/no-autoinit', () => ({
 }));
 
 import { WaveformPlayer } from '../../src/player';
-import type { WaveformPlayerProps } from '../../src/player';
+import type {
+	WaveformLoopEventDetail,
+	WaveformPeaks,
+	WaveformPlayerProps,
+	WaveformRateChangeEventDetail,
+	WaveformSeekEventDetail,
+	WaveformVolumeChangeEventDetail,
+} from '../../src/player';
+import type { WaveformPlayer as WaveformPlayerCore } from '@arraypress/waveform-player';
 
 beforeEach(() => {
 	instances.length = 0;
@@ -363,7 +371,191 @@ describe('WaveformPlayer (Vue)', () => {
 	});
 });
 
+describe('WaveformPlayer (Vue) — 2.0 core options', () => {
+	/** Each new 2.0 option with a value that differs from the core default. */
+	const NEW_OPTIONS: Record<string, unknown> = {
+		duration: 187,
+		lazy: true,
+		loop: true,
+		showLoop: true,
+		loopLabel: 'Repeat',
+		showVolume: true,
+		volume: 0.4,
+		volumeLabel: 'Lautstärke',
+		muteLabel: 'Stumm',
+		showDownload: true,
+		downloadUrl: '/full/a.wav',
+		downloadName: 'a.wav',
+		downloadLabel: 'Herunterladen',
+	};
+
+	for (const [key, value] of Object.entries(NEW_OPTIONS)) {
+		it(`forwards ${key} when set`, async () => {
+			mount(WaveformPlayer, { props: { url: '/a.mp3', [key]: value } });
+			await flushPromises();
+			expect(instances[0].opts[key]).toEqual(value);
+		});
+	}
+
+	it('leaves every 2.0 option out when unset, so the core defaults apply', async () => {
+		mount(WaveformPlayer, { props: { url: '/a.mp3' } });
+		await flushPromises();
+		for (const key of Object.keys(NEW_OPTIONS)) expect(key in instances[0].opts, key).toBe(false);
+	});
+
+	it('forwards false for the 2.0 booleans (not dropped as absent)', async () => {
+		mount(WaveformPlayer, {
+			props: { url: '/a.mp3', lazy: false, loop: false, showLoop: false, showVolume: false, showDownload: false },
+		});
+		await flushPromises();
+		expect(instances[0].opts).toMatchObject({
+			lazy: false,
+			loop: false,
+			showLoop: false,
+			showVolume: false,
+			showDownload: false,
+		});
+	});
+
+	it('forwards volume 0 (muted start), not dropped as falsy', async () => {
+		mount(WaveformPlayer, { props: { url: '/a.mp3', volume: 0 } });
+		await flushPromises();
+		expect(instances[0].opts.volume).toBe(0);
+	});
+
+	it('passes compact wp1: peaks through as the string', async () => {
+		mount(WaveformPlayer, { props: { url: '/a.mp3', waveform: 'wp1:AID_' } });
+		await flushPromises();
+		expect(instances[0].opts.waveform).toBe('wp1:AID_');
+	});
+
+	it('per-track duration / downloadUrl / downloadName follow the url they are set with', async () => {
+		const wrapper = mount(WaveformPlayer, {
+			props: { url: '/a.mp3', duration: 187, downloadUrl: '/full/a.wav', downloadName: 'a.wav' },
+		});
+		await flushPromises();
+		expect(instances[0].opts).toMatchObject({ url: '/a.mp3', duration: 187, downloadUrl: '/full/a.wav' });
+
+		// New track with its own values: the player is rebuilt with them.
+		await wrapper.setProps({ url: '/b.mp3', duration: 225, downloadUrl: '/full/b.wav', downloadName: 'b.wav' });
+		await flushPromises();
+		expect(instances).toHaveLength(2);
+		expect(instances[0].destroy).toHaveBeenCalledTimes(1);
+		expect(instances[1].opts).toMatchObject({
+			url: '/b.mp3',
+			duration: 225,
+			downloadUrl: '/full/b.wav',
+			downloadName: 'b.wav',
+		});
+
+		// A track without them: nothing carries over from the previous one.
+		await wrapper.setProps({ url: '/c.mp3', duration: undefined, downloadUrl: undefined, downloadName: undefined });
+		await flushPromises();
+		expect(instances).toHaveLength(3);
+		expect(instances[2].opts.url).toBe('/c.mp3');
+		expect('duration' in instances[2].opts).toBe(false);
+		expect('downloadUrl' in instances[2].opts).toBe(false);
+		expect('downloadName' in instances[2].opts).toBe(false);
+	});
+
+	it('changing duration alone (same url) also rebuilds with the new value', async () => {
+		const wrapper = mount(WaveformPlayer, { props: { url: '/a.mp3', duration: 100 } });
+		await flushPromises();
+		await wrapper.setProps({ duration: 101 });
+		await flushPromises();
+		expect(instances).toHaveLength(2);
+		expect(instances[1].opts.duration).toBe(101);
+	});
+});
+
+describe('WaveformPlayer (Vue) — 2.0 core events', () => {
+	/** Dispatch the core's container event on the host, as `_emit()` does. */
+	const fire = (el: Element, name: string, detail: Record<string, unknown>) =>
+		el.dispatchEvent(new CustomEvent(`waveformplayer:${name}`, { bubbles: true, composed: true, detail }));
+
+	it('re-emits seek / ratechange / volumechange / loop with the core detail', async () => {
+		const wrapper = mount(WaveformPlayer, { props: { url: '/a.mp3' } });
+		await flushPromises();
+		const host = wrapper.element;
+		const player = instances[0];
+		const seek = { player, url: '/a.mp3', currentTime: 12, duration: 187 };
+		const rate = { player, url: '/a.mp3', playbackRate: 1.5 };
+		const volume = { player, url: '/a.mp3', volume: 0.3, muted: false };
+		const loop = { player, url: '/a.mp3', loop: false, start: 10, end: 20 };
+		fire(host, 'seek', seek);
+		fire(host, 'ratechange', rate);
+		fire(host, 'volumechange', volume);
+		fire(host, 'loop', loop);
+		expect(wrapper.emitted('seek')).toEqual([[seek]]);
+		expect(wrapper.emitted('ratechange')).toEqual([[rate]]);
+		expect(wrapper.emitted('volumechange')).toEqual([[volume]]);
+		expect(wrapper.emitted('loop')).toEqual([[loop]]);
+	});
+
+	it('reaches @seek-style listeners passed as props', async () => {
+		const onSeek = vi.fn();
+		const onVolumechange = vi.fn();
+		const wrapper = mount(WaveformPlayer, { props: { url: '/a.mp3', onSeek, onVolumechange } });
+		await flushPromises();
+		fire(wrapper.element, 'seek', { currentTime: 1, duration: 2 });
+		fire(wrapper.element, 'volumechange', { volume: 0, muted: true });
+		expect(onSeek).toHaveBeenCalledWith({ currentTime: 1, duration: 2 });
+		expect(onVolumechange).toHaveBeenCalledWith({ volume: 0, muted: true });
+	});
+
+	it('keeps emitting after a remount (the listener is on the host, not the instance)', async () => {
+		const wrapper = mount(WaveformPlayer, { props: { url: '/a.mp3' } });
+		await flushPromises();
+		await wrapper.setProps({ url: '/b.mp3' });
+		await flushPromises();
+		fire(wrapper.element, 'ratechange', { playbackRate: 2 });
+		expect(wrapper.emitted('ratechange')).toEqual([[{ playbackRate: 2 }]]);
+	});
+
+	it('ignores the same events bubbling up from a nested element', async () => {
+		const wrapper = mount(WaveformPlayer, { props: { url: '/a.mp3' } });
+		await flushPromises();
+		const child = document.createElement('div');
+		wrapper.element.appendChild(child);
+		fire(child, 'seek', { currentTime: 1 });
+		expect(wrapper.emitted('seek')).toBeUndefined();
+	});
+
+	it('stops listening once unmounted', async () => {
+		const wrapper = mount(WaveformPlayer, { props: { url: '/a.mp3' } });
+		await flushPromises();
+		const host = wrapper.element;
+		const emitted = wrapper.emitted();
+		wrapper.unmount();
+		fire(host, 'loop', { loop: true });
+		expect(emitted.loop).toBeUndefined();
+	});
+
+	it('types each payload with the core detail type', () => {
+		type RuntimeProps = InstanceType<typeof WaveformPlayer>['$props'];
+		expectTypeOf<Parameters<NonNullable<RuntimeProps['onSeek']>>>().toEqualTypeOf<[WaveformSeekEventDetail]>();
+		expectTypeOf<Parameters<NonNullable<RuntimeProps['onRatechange']>>>().toEqualTypeOf<
+			[WaveformRateChangeEventDetail]
+		>();
+		expectTypeOf<Parameters<NonNullable<RuntimeProps['onVolumechange']>>>().toEqualTypeOf<
+			[WaveformVolumeChangeEventDetail]
+		>();
+		expectTypeOf<Parameters<NonNullable<RuntimeProps['onLoop']>>>().toEqualTypeOf<[WaveformLoopEventDetail]>();
+		expectTypeOf<Parameters<NonNullable<RuntimeProps['onTimeupdate']>>>().toEqualTypeOf<
+			[number, number, WaveformPlayerCore]
+		>();
+	});
+});
+
 describe('WaveformPlayer types (Vue)', () => {
+	it('types the 2.0 options from the core', () => {
+		type RuntimeProps = InstanceType<typeof WaveformPlayer>['$props'];
+		expectTypeOf<RuntimeProps['duration']>().toEqualTypeOf<number | undefined>();
+		expectTypeOf<RuntimeProps['showDownload']>().toEqualTypeOf<boolean | undefined>();
+		expectTypeOf<WaveformPlayerProps['waveform']>().toEqualTypeOf<WaveformPeaks | undefined>();
+		expectTypeOf<WaveformPlayerProps['volume']>().toEqualTypeOf<number | null | undefined>();
+	});
+
 	it('keeps style as the fall-through CSS attribute, not the core waveformStyle alias', () => {
 		expectTypeOf<WaveformPlayerProps>().not.toHaveProperty('style');
 	});

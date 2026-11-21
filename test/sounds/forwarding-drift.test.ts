@@ -11,7 +11,7 @@
  * the playlist wrappers.
  *
  * Every key of `WaveformSoundsOptions` (read from the installed core's
- * `index.d.ts`, see `option-surface.ts`) must either be forwarded — and
+ * `types/types.d.ts`, see `option-surface.ts`) must either be forwarded — and
  * rebuild the list, or be applied live, when it changes; callbacks must
  * surface as emits — or be listed in `NOT_FORWARDED` with the reason.
  * Adding an option to the core without deciding which fails this file.
@@ -25,10 +25,10 @@ import { ALL_OPTIONS, isCallback } from './option-surface';
 const NOT_FORWARDED: Record<string, string> = {};
 
 /**
- * Known gaps in the CORE between its `index.d.ts` and its runtime
+ * Known gaps in the CORE between its `types/types.d.ts` and its runtime
  * `DEFAULT_OPTIONS` (reported upstream). The check below fails when one is
  * fixed, so delete the entry then. These don't affect forwarding: the
- * wrapper reads the surface from `index.d.ts`.
+ * wrapper reads the surface from `types/types.d.ts`.
  */
 const KNOWN_CORE_DRIFT: Record<string, string> = {};
 
@@ -80,19 +80,19 @@ describe('forwarding drift', () => {
 		expect(ALL_OPTIONS).toContain('onFilter');
 	});
 
-	it("the core's index.d.ts declares exactly its runtime DEFAULT_OPTIONS", async () => {
-		// The surface above is read from the hand-written types; this keeps
+	it("the core's types/types.d.ts declares exactly its runtime DEFAULT_OPTIONS", async () => {
+		// The surface above is read from the core's declarations; this keeps
 		// those honest against the code, so an option added to the core's
-		// DEFAULT_OPTIONS but not its index.d.ts can't slip past the guard.
+		// DEFAULT_OPTIONS but not its WaveformSoundsOptions can't slip past the guard.
 		const actual = await vi.importActual<{ DEFAULT_OPTIONS: Record<string, unknown> }>(
 			'@arraypress/waveform-sounds/no-autoinit'
 		);
 		const runtime = Object.keys(actual.DEFAULT_OPTIONS);
 		const typedOnly = ALL_OPTIONS.filter((key) => !runtime.includes(key)).sort();
 		const runtimeOnly = runtime.filter((key) => !ALL_OPTIONS.includes(key)).sort();
-		expect(runtimeOnly, 'core options missing from its index.d.ts').toEqual([]);
+		expect(runtimeOnly, 'core options missing from its types/types.d.ts').toEqual([]);
 		// Fails both ways: a new gap, and an entry the core has since fixed.
-		expect(typedOnly, 'core index.d.ts options missing from DEFAULT_OPTIONS').toEqual(
+		expect(typedOnly, 'core types/types.d.ts options missing from DEFAULT_OPTIONS').toEqual(
 			Object.keys(KNOWN_CORE_DRIFT).sort()
 		);
 	});
